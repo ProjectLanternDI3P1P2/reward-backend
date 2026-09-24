@@ -22,4 +22,4 @@ jobs:
       # Coverage is not collected here — the Sonar workflow collects it while wrapping
       # its own build, and doing it twice would only slow this job down.
       - name: Run tests
-        run: dotnet test --solution Combat.Presentation.slnx
+        run: dotnet test --solution Reward.Presentation.slnx
