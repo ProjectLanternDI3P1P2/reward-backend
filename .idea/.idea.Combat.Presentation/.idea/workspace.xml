@@ -14,75 +14,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3097b67-6555-4659-9a48-330ba095174b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.husky/pre-commit" beforeDir="false" afterPath="$PROJECT_DIR$/.husky/pre-commit" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Abstractions/ICommand.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/ApplicationServiceRegistration.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Combat.Application.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Features/PlayerUseCase/CreatePlayer/CreatePlayerCommand.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Features/PlayerUseCase/CreatePlayer/CreatePlayerCommandHandler.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Features/PlayerUseCase/CreatePlayer/CreatePlayerValidator.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Features/PlayerUseCase/GetPlayerById/GetPlayerByIdQuery.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Features/PlayerUseCase/GetPlayerById/GetPlayerByIdQueryHandler.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Features/PlayerUseCase/GetPlayerById/GetPlayerByIdResult.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Messaging/IMessagePublisher.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Messaging/MessageEnvelope.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Messaging/PlayerCreatedMessageFactory.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Models/PlayerSummary.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/PipelineBehavior/LoggingBehavior.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/PipelineBehavior/ValidationBehavior.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Application/Ports/IPlayerClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Contracts/CHANGELOG.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Contracts/Combat.Contracts.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Contracts/Protos/combat_events_v1.proto" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Contracts/Protos/combat_player_v1.proto" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Contracts/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Domain/Combat.Domain.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Domain/Entities/Player.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Domain/Enums/CombatStatus.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Domain/Repositories/IPlayerRepository.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Domain/Services/DamageCalculator.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Domain/Services/IClock.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Combat.Infrastructure.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Grpc/Clients/PlayerGrpcClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Grpc/Configuration/PlayerGrpcClientOptions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Grpc/GrpcServiceRegistration.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/InfrastructureServiceRegistration.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Messaging/MessagingServiceRegistration.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Messaging/NoOpMessagePublisher.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Messaging/RabbitMqMessagePublisher.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Messaging/RabbitMqOptions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Persistence/CombatDbContext.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Persistence/CombatDbContextFactory.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Persistence/Configurations/PlayerConfiguration.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Persistence/DatabaseOptions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Persistence/Repositories/PlayerRepository.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/PipelineBehavior/CommandTransactionBehavior.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Infrastructure/Services/SystemClock.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation.slnx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Combat.Presentation.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Controllers/PlayerController.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/DTO/PlayerDto.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Extensions/ApplicationExtension.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Extensions/BuilderExtension.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Extensions/GrpcServiceEndpointExtensions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Extensions/LogExtension/IgnoreLoggingDestructuringPolicy.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Extensions/LogExtension/LogLevelExtensions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Extensions/LogExtension/LowercaseLevelEnricher.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Grpc/Interceptors/GrpcExceptionInterceptor.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Grpc/Services/PlayerGrpcService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Middleware/ExceptionHandlingMiddleware.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Program.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/Properties/launchSettings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/appsettings.Development.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Presentation/appsettings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/Combat.Test.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/Features/PlayerUseCase/CreatePlayer/CreatePlayerCommandHandlerTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/Features/PlayerUseCase/CreatePlayer/CreatePlayerValidatorTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/Features/PlayerUseCase/GetPlayerById/GetPlayerByIdQueryHandlerTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/Persistence/Repositories/PlayerRepositoryTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/PipelineBehavior/CommandTransactionBehaviorTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Combat.Test/PipelineBehavior/ValidationBehaviorTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Reward.Contracts/Protos/reward_player_v1.proto" beforeDir="false" afterPath="$PROJECT_DIR$/Reward.Contracts/Protos/reward_player_v1.proto" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Combat.Presentation/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Combat.Presentation/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/compose.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,25 +33,25 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "EthanDeL"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;EthanDeL&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/ProjectLanternDI3P1P2/reward-backend.git",
-    "accountId": "9ebd34f6-8b99-4cd0-b6bc-914b0e0a5b59"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/ProjectLanternDI3P1P2/reward-backend.git&quot;,
+    &quot;accountId&quot;: &quot;9ebd34f6-8b99-4cd0-b6bc-914b0e0a5b59&quot;
   }
-}]]></component>
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b2d015aef913cff5d5f16a2d476f19e1f336d02f373a7eb6a5439ecb2ec8bd3/AssemblyScanner.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7,
-  "fromUser": false
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3Jm4ImrwTOalrSvOxAmJWcln2Qb" />
   <component name="ProjectSessionTemplates">
     <option name="panelTemplate">
@@ -139,25 +72,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    ".NET Launch Settings Profile.Combat.Presentation: http.executor": "Debug",
-    ".NET Project.Combat.Test.executor": "Debug",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "cidr.known.project.marker": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "copilot.chat.legacySessionMetadata.migrated": "true",
-    "git-widget-placeholder": "rename-reward",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "Settings.Markdown",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Launch Settings Profile.Combat.Presentation: http.executor&quot;: &quot;Debug&quot;,
+    &quot;.NET Launch Settings Profile.Reward.Presentation: http.executor&quot;: &quot;Run&quot;,
+    &quot;.NET Project.Combat.Test.executor&quot;: &quot;Debug&quot;,
+    &quot;.NET Project.Reward.Test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;rename-reward&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;Settings.Markdown&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected=".NET Launch Settings Profile.Reward.Presentation: http">
     <configuration name="Reward.Test" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/Reward.Test/bin/Debug/net10.0/Reward.Test" />
@@ -224,7 +159,10 @@
       <method v="2" />
     </configuration>
     <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
-      <deployment type="dockerfile" />
+      <deployment type="dockerfile">
+        <settings />
+      </deployment>
+      <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
       <method v="2" />
     </configuration>
     <list>
@@ -241,7 +179,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1790252831590</updated>
-      <workItem from="1790252832700" duration="4170000" />
+      <workItem from="1790252832700" duration="4803000" />
     </task>
     <servers />
   </component>
