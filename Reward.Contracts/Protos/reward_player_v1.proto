@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package combat.v1;
+package reward.v1;
 
-option csharp_namespace = "Combat.Contracts.V1";
+option csharp_namespace = "Reward.Contracts.V1";
 
-// Contract owned by the Combat microservice. Field numbers are permanent:
+// Contract owned by the Reward microservice. Field numbers are permanent:
 // do not reuse a deleted number; reserve it instead.
-service CombatPlayerService {
+service RewardPlayerService {
   rpc GetPlayer (GetPlayerRequest) returns (GetPlayerResponse);
 }
 
