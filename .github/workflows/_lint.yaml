@@ -24,4 +24,4 @@ jobs:
       # --severity warn, not the default: the style rules in .editorconfig are set to
       # warning, and the default threshold would only ever catch whitespace.
       - name: Verify formatting
-        run: dotnet format Combat.Presentation.slnx --verify-no-changes --severity warn
+        run: dotnet format Reward.Presentation.slnx --verify-no-changes --severity warn
