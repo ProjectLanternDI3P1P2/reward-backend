@@ -66,9 +66,9 @@ jobs:
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
-          dotnet build Combat.Presentation.slnx --no-incremental
+          dotnet build Reward.Presentation.slnx --no-incremental
           # Sonar does not read Cobertura for C#; dotnet-coverage's xml format is the
           # vscoveragexml one it expects.
-          dotnet dotnet-coverage collect "dotnet test --solution Combat.Presentation.slnx" \
+          dotnet dotnet-coverage collect "dotnet test --solution Reward.Presentation.slnx" \
             -f xml -o coverage.xml
           dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"

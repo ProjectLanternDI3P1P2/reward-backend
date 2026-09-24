@@ -14,8 +14,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3097b67-6555-4659-9a48-330ba095174b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Combat.Presentation/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Combat.Presentation/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/compose.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/_lint.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/_lint.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,6 +47,10 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b2d015aef913cff5d5f16a2d476f19e1f336d02f373a7eb6a5439ecb2ec8bd3/AssemblyScanner.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7,
   &quot;fromUser&quot;: false
@@ -179,7 +182,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1790252831590</updated>
-      <workItem from="1790252832700" duration="4803000" />
+      <workItem from="1790252832700" duration="5114000" />
     </task>
     <servers />
   </component>
