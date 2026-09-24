@@ -1,0 +1,342 @@
+erDiagram
+    %% 1 - INVENTAIRE ET ITEMS
+    %% HERO est externe : hero_id est un identifiant simple, sans FK locale.
+
+    INVENTORY {
+        uuid id_inventory PK
+        uuid hero_id "External hero identifier - not a FK"
+        int item_capacity
+        int potion_capacity
+        datetime created_at
+        datetime updated_at
+    }
+    ITEM {
+        uuid id_item PK
+        uuid id_category FK
+        uuid id_rarity FK
+        string name
+        string description
+        int level_required
+        boolean stackable
+        datetime created_at
+        datetime updated_at
+    }
+    ITEM_INSTANCE {
+        uuid id_item_instance PK
+        uuid id_item FK
+        uuid inventory_id FK
+        string status "Stack-level lifecycle; equipment tracked separately"
+        int quantity "Positive; stack quantity"
+        datetime created_at
+        datetime updated_at
+    }
+    CATEGORY {
+        uuid id_category PK
+        string label
+        datetime created_at
+        datetime updated_at
+    }
+    CLASS_TAG {
+        uuid id_class_tag PK
+        string label
+        datetime created_at
+        datetime updated_at
+    }
+    MODIFIER {
+        uuid id_modifier PK
+        string name
+        string stat
+        decimal value
+        string type
+        datetime created_at
+        datetime updated_at
+    }
+    ITEM_CLASS_TAG {
+        uuid id_item PK,FK
+        uuid id_class_tag PK,FK
+    }
+    ITEM_MODIFIER {
+        uuid id_item PK,FK
+        uuid id_modifier PK,FK
+    }
+    RARITY {
+        uuid id_rarity PK
+        string label
+        string color
+        int rank
+        datetime created_at
+        datetime updated_at
+    }
+
+    %% One instance is in at most one permanent inventory; during a run, use RUN_ITEM_STATE.
+    INVENTORY ||--o{ ITEM_INSTANCE : contient
+    ITEM ||--o{ ITEM_INSTANCE : instancie
+    CATEGORY ||--o{ ITEM : categorise
+    RARITY ||--o{ ITEM : classe
+    ITEM ||--o{ ITEM_CLASS_TAG : possede
+    CLASS_TAG ||--o{ ITEM_CLASS_TAG : qualifie
+    ITEM ||--o{ ITEM_MODIFIER : possede
+    MODIFIER ||--o{ ITEM_MODIFIER : modifie
+
+    %% 2 - EQUIPMENT
+    EQUIPMENT {
+        uuid id_equipment PK
+        uuid hero_id "External hero identifier - not a FK"
+        uuid id_item_instance FK "May be shared by several equipment rows, within quantity"
+        uuid id_slot FK
+        int quantity "Always 1 for each equipped slot"
+        datetime created_at
+        datetime updated_at
+    }
+    SLOT {
+        uuid id_slot PK
+        string name
+        datetime created_at
+        datetime updated_at
+    }
+    SLOT ||--o{ EQUIPMENT : utilise
+    ITEM_INSTANCE ||--o{ EQUIPMENT : alimente_les_slots
+    %% UNIQUE(hero_id, id_slot); sum of equipped quantities <= stack quantity.
+    %% Changes to EQUIPMENT are forbidden during COMBAT, permitted between combats.
+
+    %% 3 - SNAPSHOTS INVENTAIRE
+    INVENTORY_SNAPSHOT {
+        uuid id_inventory_snapshot PK
+        uuid id_inventory FK
+        uuid id_run "External run identifier - not a FK"
+        datetime created_at
+    }
+    ITEM_SNAPSHOT {
+        uuid id_item_snapshot PK
+        uuid id_inventory_snapshot FK
+        uuid id_item_instance FK
+        datetime created_at
+        int quantity
+    }
+    INVENTORY ||--o{ INVENTORY_SNAPSHOT : memorise
+    INVENTORY_SNAPSHOT ||--o{ ITEM_SNAPSHOT : sauvegarde
+    ITEM_INSTANCE ||--o{ ITEM_SNAPSHOT : garde
+
+    EQUIPMENT_SNAPSHOT {
+        uuid id_equipment_snapshot PK
+        uuid id_inventory_snapshot FK
+        uuid id_item_instance FK
+        uuid id_slot FK
+        int quantity "Always 1"
+    }
+    INVENTORY_SNAPSHOT ||--o{ EQUIPMENT_SNAPSHOT : garde_equipement
+    ITEM_INSTANCE ||--o{ EQUIPMENT_SNAPSHOT : objet_equipe
+    SLOT ||--o{ EQUIPMENT_SNAPSHOT : slot_sauvegarde
+
+    RUN_INVENTORY_SESSION {
+        uuid id_run_inventory_session PK
+        uuid id_inventory_snapshot FK "UNIQUE one session per snapshot"
+        string status "ACTIVE VICTORY_COMMITTED DEFEAT_CLOSED"
+        string phase "EXPLORATION COMBAT"
+        datetime updated_at
+        datetime closed_at
+    }
+    INVENTORY_SNAPSHOT ||--|| RUN_INVENTORY_SESSION : session_persistante
+
+    %% Run-only state is persisted after each authorized action, not just at run end.
+    RUN_ITEM_STATE {
+        uuid id_run_item_state PK
+        uuid id_run_inventory_session FK
+        uuid id_item FK
+        uuid id_item_instance FK "Nullable for loot acquired during run"
+        int quantity "0 allowed for consumed entries"
+        string state "AVAILABLE CONSUMED"
+        datetime updated_at
+    }
+    RUN_INVENTORY_SESSION ||--o{ RUN_ITEM_STATE : etat_temporaire
+    ITEM ||--o{ RUN_ITEM_STATE : type_objet
+    ITEM_INSTANCE |o--o{ RUN_ITEM_STATE : instance_initiale
+
+    RUN_EQUIPMENT_STATE {
+        uuid id_run_equipment_state PK
+        uuid id_run_inventory_session FK
+        uuid id_run_item_state FK
+        uuid id_slot FK
+        int quantity "Always 1"
+        datetime updated_at
+    }
+    RUN_INVENTORY_SESSION ||--o{ RUN_EQUIPMENT_STATE : equipement_temporaire
+    RUN_ITEM_STATE ||--o{ RUN_EQUIPMENT_STATE : puise_dans_pile
+    SLOT ||--o{ RUN_EQUIPMENT_STATE : occupe
+    %% UNIQUE(id_run_inventory_session, id_slot); no equip/unequip in COMBAT.
+    %% The permanent inventory and equipment are locked for sales/trades for the entire active run.
+
+    %% 4 - RECOMPENSES
+    REWARD {
+        uuid id_reward PK
+        uuid id_run "External run identifier - not a FK"
+        uuid id_reward_source FK
+        string type
+        string status
+        string reward_key UK
+        int xp_amount
+        datetime created_at
+    }
+    REWARD_ITEM {
+        uuid id_reward_item PK
+        uuid id_reward FK
+        uuid id_item FK
+        uuid id_item_instance FK "Nullable until applied"
+        int quantity
+        datetime created_at
+    }
+    REWARD_SOURCE {
+        uuid id_reward_source PK
+        string name
+        string description
+    }
+    REWARD_SOURCE ||--o{ REWARD : concerne
+    REWARD ||--o{ REWARD_ITEM : contient
+    ITEM ||--o{ REWARD_ITEM : est_recompense_dans
+    REWARD_ITEM }o--o| ITEM_INSTANCE : genere
+
+    %% 5 - LOOT TABLES
+    LOOT_TABLE {
+        uuid id_loot_table PK
+        string name
+        string difficulty
+        string source_type
+        datetime created_at
+        datetime updated_at
+    }
+    LOOT_RARITY_RULE {
+        uuid id_loot_rarity_rule PK
+        uuid id_loot_table FK
+        uuid id_rarity FK
+        int weight
+    }
+    LOOT_TABLE_ENTRY {
+        uuid id_loot_table_entry PK
+        uuid id_loot_rarity_rule FK
+        uuid id_item FK
+        int weight
+        int min_quantity
+        int max_quantity
+    }
+    LOOT_TABLE ||--o{ LOOT_RARITY_RULE : possede
+    RARITY ||--o{ LOOT_RARITY_RULE : est_utilisee_par
+    LOOT_RARITY_RULE ||--|{ LOOT_TABLE_ENTRY : contient
+    ITEM ||--o{ LOOT_TABLE_ENTRY : apparait_dans
+
+    %% 6 - MARKETPLACE
+    MARKETPLACE_LISTING {
+        uuid id_listing PK
+        uuid id_item_instance FK
+        uuid seller_id "External player identifier - not a FK"
+        int quantity "Quantity offered from this stack"
+        decimal price
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+    MARKETPLACE_RESERVATION {
+        uuid id_reservation PK
+        uuid id_listing FK
+        uuid buyer_id "External player identifier - not a FK"
+        string status
+        datetime expires_at
+        datetime created_at
+        datetime updated_at
+    }
+    MARKETPLACE_TRANSACTION {
+        uuid id_transaction PK
+        uuid id_listing FK
+        uuid id_reservation FK "Nullable if direct purchase"
+        uuid buyer_id "External player identifier - not a FK"
+        uuid seller_id "External player identifier - not a FK"
+        decimal amount
+        string idempotency_key UK
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+    OWNERSHIP_TRANSFER {
+        uuid id_transfer PK
+        uuid id_transaction FK
+        uuid id_item_instance FK
+        int quantity "Purchased quantity"
+        uuid from_owner_id "External player identifier - not a FK"
+        uuid to_owner_id "External player identifier - not a FK"
+        uuid from_inventory_id FK
+        uuid to_inventory_id FK
+        string status
+        datetime created_at
+        datetime completed_at
+    }
+    ITEM_INSTANCE ||--o{ MARKETPLACE_LISTING : est_liste_dans
+    MARKETPLACE_LISTING ||--o{ MARKETPLACE_RESERVATION : possede
+    MARKETPLACE_LISTING ||--o{ MARKETPLACE_TRANSACTION : concerne
+    MARKETPLACE_RESERVATION ||--o| MARKETPLACE_TRANSACTION : securise
+    MARKETPLACE_TRANSACTION ||--o| OWNERSHIP_TRANSFER : declenche
+    ITEM_INSTANCE ||--o{ OWNERSHIP_TRANSFER : est_transfere
+
+    WALLET {
+        uuid id_wallet PK
+        uuid owner_id "External player identifier; UNIQUE"
+        decimal balance "Nonnegative; local currency"
+        datetime updated_at
+    }
+    WALLET_HOLD {
+        uuid id_wallet_hold PK
+        uuid id_wallet FK
+        uuid id_transaction FK "Nullable for trade holds"
+        uuid id_trade FK "Nullable for purchase holds"
+        decimal amount "Positive reserved funds"
+        string status "HELD CAPTURED RELEASED"
+        string hold_key UK "Stable idempotency key"
+        datetime created_at
+        datetime updated_at
+    }
+    WALLET_LEDGER_ENTRY {
+        uuid id_wallet_ledger_entry PK
+        uuid id_wallet FK
+        uuid id_wallet_hold FK "Nullable for direct credits"
+        decimal delta "Signed credit or debit"
+        string operation_key UK "Stable idempotency key"
+        datetime created_at
+    }
+    WALLET ||--o{ WALLET_HOLD : reserve_fonds
+    WALLET ||--o{ WALLET_LEDGER_ENTRY : historique
+    WALLET_HOLD |o--o{ WALLET_LEDGER_ENTRY : est_solde_par
+    MARKETPLACE_TRANSACTION |o--o{ WALLET_HOLD : reserve_achat
+    %% TRADE is declared below; monetary trade uses the same wallet and hold mechanism.
+
+    %% Constraints for PostgreSQL: reward_key and idempotency_key NOT NULL UNIQUE.
+    %% One transfer per transaction: UNIQUE(ownership_transfer.id_transaction).
+    %% Partial unique indexes required for one active listing/reservation per item/listing.
+
+    %% 7 - ECHANGES ENTRE JOUEURS
+    TRADE {
+        uuid id_trade PK
+        uuid initiator_id "External player identifier - not a FK"
+        uuid counterparty_id "External player identifier - not a FK"
+        decimal cash_adjustment
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+    TRADE_ITEM {
+        uuid id_trade_item PK
+        uuid id_trade FK
+        uuid id_item_instance FK
+        int quantity "Quantity offered from stack"
+        string side
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+    TRADE ||--|{ TRADE_ITEM : contient
+    ITEM_INSTANCE ||--o{ TRADE_ITEM : participe_a
+    TRADE |o--o{ WALLET_HOLD : reserve_compensation_monetaire
+
+    %% Technical invariants: no sale or trade of a stack belonging to an ACTIVE run inventory.
+    %% Item instances never lose inventory ownership during a transfer.
+    %% In a single local PostgreSQL transaction: transfer quantity/ownership, capture holds,
+    %% credit seller (or trade recipient), record ledger and mark operation completed.
+    %% For partial-stack transfers, split/merge stacks atomically without ownerless instances.
+    %% The external hero/player identifiers are scalar UUIDs, never local hero/player FK.
