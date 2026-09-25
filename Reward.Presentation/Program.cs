@@ -21,3 +21,5 @@ if (app.Environment.IsDevelopment())
 app.ConfigureStart();
 
 await app.RunAsync();
+
+public partial class Program;

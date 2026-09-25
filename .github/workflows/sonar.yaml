@@ -22,6 +22,20 @@ jobs:
   sonar:
     name: SonarQube Cloud scan
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: reward_test
+          POSTGRES_USER: reward
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reward -d reward_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     # Dependabot pull requests are handed Dependabot's own secrets, never the Actions
     # ones, so SONAR_TOKEN would be empty and the scan would fail on every bump. Nothing
     # is lost: a dependency bump changes no C# line, so there is no new code to analyse,
@@ -59,6 +73,7 @@ jobs:
       - name: Build, test and analyse
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          REWARD_TEST_DATABASE_CONNECTION: Host=localhost;Port=5432;Database=reward_test;Username=reward
         run: |
           dotnet dotnet-sonarscanner begin \
             /k:"ProjectLanternDI3P1P2_reward-backend" \

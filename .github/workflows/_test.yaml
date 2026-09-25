@@ -10,6 +10,20 @@ jobs:
   test:
     name: dotnet test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: reward_test
+          POSTGRES_USER: reward
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reward -d reward_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -22,4 +36,6 @@ jobs:
       # Coverage is not collected here — the Sonar workflow collects it while wrapping
       # its own build, and doing it twice would only slow this job down.
       - name: Run tests
+        env:
+          REWARD_TEST_DATABASE_CONNECTION: Host=localhost;Port=5432;Database=reward_test;Username=reward
         run: dotnet test --solution Reward.Presentation.slnx

@@ -31,6 +31,37 @@ dotnet test --solution Reward.Presentation.slnx
 dotnet run --project Reward.Presentation/Reward.Presentation.csproj
 ```
 
+### Tests
+
+Run unit tests only:
+
+```powershell
+dotnet test --solution Reward.Presentation.slnx --filter "FullyQualifiedName!~Integration"
+```
+
+Controller integration tests need PostgreSQL. Start Compose, then run the
+integration suite:
+
+```powershell
+docker compose up -d postgres
+dotnet test --solution Reward.Presentation.slnx --filter "FullyQualifiedName~Integration"
+```
+
+Compose exposes PostgreSQL on port `5433`. Tests create, migrate, reset and drop
+their own per-domain databases. For another server, provide its administrative
+connection (the administrative database is never reset):
+
+```powershell
+$env:REWARD_TEST_DATABASE_CONNECTION="Host=localhost;Port=5433;Database=reward;Username=reward"
+dotnet test --solution Reward.Presentation.slnx --filter "FullyQualifiedName~Integration"
+```
+
+Run all tests with:
+
+```powershell
+dotnet test --solution Reward.Presentation.slnx
+```
+
 ## Internal gRPC contract
 
 `Reward.Contracts` owns the versioned `Reward_player_v1.proto` contract and the
@@ -195,17 +226,13 @@ which reads `.editorconfig`. A lighter pass runs locally as a pre-commit hook
 through Husky.Net, alongside a `commit-msg` hook checking the Conventional Commits
 format. Run `dotnet tool restore` then `dotnet husky install` once per clone.
 
-## Adding integration tests
+## Integration tests
 
-There are none yet, and `Reward.Test` holds unit tests only —
-`PlayerRepositoryTests` uses the EF Core in-memory provider, which is not a real
-database. Real integration tests would need a `WebApplicationFactory` for the
-HTTP surface and a containerised PostgreSQL for persistence.
-
-Both are cross-cutting choices affecting all five services, so pick them as a
-shared decision and record an ADR before adding them here. Once they exist, give
-them their own job in `ci.yaml` so a slow suite does not gate the fast feedback
-from lint and unit tests.
+Controller integration tests live under `Reward.Test/Integration`. They use a
+`WebApplicationFactory`, PostgreSQL and Respawn. Each controller domain owns a
+fixture and temporary database, allowing unrelated domains to run in parallel.
+See [Tests](#tests) above and the detailed
+[testing strategy](./docs/BACKEND_TESTING_STRATEGY.md).
 
 ## Setting up a new repository from this template
 
