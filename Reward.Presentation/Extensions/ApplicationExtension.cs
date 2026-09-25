@@ -26,6 +26,8 @@ public static class ApplicationExtension
             {
                 opt.Title = "Reward API";
                 opt.Theme = ScalarTheme.DeepSpace;
+                opt.AddApiKeyAuthentication("UserId", scheme => scheme.WithName("X-User-Id"));
+                opt.EnablePersistentAuthentication();
             });
         }
 
