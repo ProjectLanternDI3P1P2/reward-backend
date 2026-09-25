@@ -61,7 +61,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           dotnet dotnet-sonarscanner begin \
-            /k:"ProjectLanternDI3P1P2_dotnet-backend-template" \
+            /k:"ProjectLanternDI3P1P2_reward-backend" \
             /o:"projectlanterndi3p1p2" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.host.url="https://sonarcloud.io" \
