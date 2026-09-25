@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Reward.Infrastructure.Persistence.Migrations;
+namespace Reward.Infrastructure.Migrations;
 
 /// <inheritdoc />
-public partial class InitialRewardSchema : Migration
+public partial class initial_migration : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -131,8 +131,7 @@ public partial class InitialRewardSchema : Migration
             });
 
         migrationBuilder.CreateTable(
-            name: "slot",
-            columns: table => new
+            name: "slot", columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
                 name = table.Column<string>(type: "text", nullable: false),
@@ -173,7 +172,6 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_wallet", x => x.id);
-                table.CheckConstraint("ck_wallet_balance", "balance >= 0");
             });
 
         migrationBuilder.CreateTable(
@@ -516,13 +514,12 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_marketplace_listing", x => x.id);
-                table.CheckConstraint("ck_listing_quantity_price", "quantity > 0 AND price >= 0");
                 table.ForeignKey(
                     name: "FK_marketplace_listing_item_instance_item_instance_id",
                     column: x => x.item_instance_id,
                     principalTable: "item_instance",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
             });
 
         migrationBuilder.CreateTable(
@@ -612,13 +609,12 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_trade_item", x => x.id);
-                table.CheckConstraint("ck_trade_item_quantity", "quantity > 0");
                 table.ForeignKey(
                     name: "FK_trade_item_item_instance_item_instance_id",
                     column: x => x.item_instance_id,
                     principalTable: "item_instance",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
                     name: "FK_trade_item_trade_trade_id",
                     column: x => x.trade_id,
@@ -647,7 +643,7 @@ public partial class InitialRewardSchema : Migration
                     column: x => x.listing_id,
                     principalTable: "marketplace_listing",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
             });
 
         migrationBuilder.CreateTable(
@@ -703,19 +699,17 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_marketplace_transaction", x => x.id);
-                table.CheckConstraint("ck_transaction_idempotency_key_nonblank", "length(btrim(idempotency_key)) > 0");
                 table.ForeignKey(
                     name: "FK_marketplace_transaction_marketplace_listing_listing_id",
                     column: x => x.listing_id,
                     principalTable: "marketplace_listing",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
                     name: "FK_marketplace_transaction_marketplace_reservation_reservation~",
                     column: x => x.reservation_id,
                     principalTable: "marketplace_reservation",
-                    principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    principalColumn: "id");
             });
 
         migrationBuilder.CreateTable(
@@ -737,31 +731,29 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_ownership_transfer", x => x.id);
-                table.CheckConstraint("ck_ownership_transfer_quantity", "quantity > 0");
                 table.ForeignKey(
                     name: "FK_ownership_transfer_inventory_from_inventory_id",
                     column: x => x.from_inventory_id,
                     principalTable: "inventory",
-                    principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    principalColumn: "id", onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
                     name: "FK_ownership_transfer_inventory_to_inventory_id",
                     column: x => x.to_inventory_id,
                     principalTable: "inventory",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
                     name: "FK_ownership_transfer_item_instance_item_instance_id",
                     column: x => x.item_instance_id,
                     principalTable: "item_instance",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
                     name: "FK_ownership_transfer_marketplace_transaction_transaction_id",
                     column: x => x.transaction_id,
                     principalTable: "marketplace_transaction",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
             });
 
         migrationBuilder.CreateTable(
@@ -781,26 +773,22 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_wallet_hold", x => x.id);
-                table.CheckConstraint("ck_wallet_hold_amount", "amount > 0");
-                table.CheckConstraint("ck_wallet_hold_single_origin", "(id_transaction IS NOT NULL) <> (id_trade IS NOT NULL)");
                 table.ForeignKey(
                     name: "FK_wallet_hold_marketplace_transaction_transaction_id",
                     column: x => x.transaction_id,
                     principalTable: "marketplace_transaction",
-                    principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    principalColumn: "id");
                 table.ForeignKey(
                     name: "FK_wallet_hold_trade_trade_id",
                     column: x => x.trade_id,
                     principalTable: "trade",
-                    principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    principalColumn: "id");
                 table.ForeignKey(
                     name: "FK_wallet_hold_wallet_wallet_id",
                     column: x => x.wallet_id,
                     principalTable: "wallet",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
             });
 
         migrationBuilder.CreateTable(
@@ -817,19 +805,17 @@ public partial class InitialRewardSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_wallet_ledger_entry", x => x.id);
-                table.CheckConstraint("ck_wallet_ledger_nonzero", "delta <> 0");
                 table.ForeignKey(
                     name: "FK_wallet_ledger_entry_wallet_hold_wallet_hold_id",
                     column: x => x.wallet_hold_id,
                     principalTable: "wallet_hold",
-                    principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    principalColumn: "id");
                 table.ForeignKey(
                     name: "FK_wallet_ledger_entry_wallet_wallet_id",
                     column: x => x.wallet_id,
                     principalTable: "wallet",
                     principalColumn: "id",
-                    onDelete: ReferentialAction.Restrict);
+                    onDelete: ReferentialAction.Cascade);
             });
 
         migrationBuilder.CreateIndex(
@@ -930,24 +916,14 @@ public partial class InitialRewardSchema : Migration
             column: "loot_rarity_rule_id");
 
         migrationBuilder.CreateIndex(
-            name: "uq_active_listing_item",
+            name: "IX_marketplace_listing_item_instance_id",
             table: "marketplace_listing",
-            column: "item_instance_id",
-            unique: true,
-            filter: "status IN ('ACTIVE', 'RESERVED')");
+            column: "item_instance_id");
 
         migrationBuilder.CreateIndex(
-            name: "uq_active_reservation_listing",
+            name: "IX_marketplace_reservation_listing_id",
             table: "marketplace_reservation",
-            column: "listing_id",
-            unique: true,
-            filter: "status = 'ACTIVE'");
-
-        migrationBuilder.CreateIndex(
-            name: "IX_marketplace_transaction_idempotency_key",
-            table: "marketplace_transaction",
-            column: "idempotency_key",
-            unique: true);
+            column: "listing_id");
 
         migrationBuilder.CreateIndex(
             name: "IX_marketplace_transaction_listing_id",
@@ -977,14 +953,7 @@ public partial class InitialRewardSchema : Migration
         migrationBuilder.CreateIndex(
             name: "IX_ownership_transfer_transaction_id",
             table: "ownership_transfer",
-            column: "transaction_id",
-            unique: true);
-
-        migrationBuilder.CreateIndex(
-            name: "IX_rarity_rank",
-            table: "rarity",
-            column: "rank",
-            unique: true);
+            column: "transaction_id");
 
         migrationBuilder.CreateIndex(
             name: "IX_reward_reward_key",
@@ -1072,18 +1041,6 @@ public partial class InitialRewardSchema : Migration
             column: "trade_id");
 
         migrationBuilder.CreateIndex(
-            name: "IX_wallet_owner_id",
-            table: "wallet",
-            column: "owner_id",
-            unique: true);
-
-        migrationBuilder.CreateIndex(
-            name: "IX_wallet_hold_hold_key",
-            table: "wallet_hold",
-            column: "hold_key",
-            unique: true);
-
-        migrationBuilder.CreateIndex(
             name: "IX_wallet_hold_trade_id",
             table: "wallet_hold",
             column: "trade_id");
@@ -1097,12 +1054,6 @@ public partial class InitialRewardSchema : Migration
             name: "IX_wallet_hold_wallet_id",
             table: "wallet_hold",
             column: "wallet_id");
-
-        migrationBuilder.CreateIndex(
-            name: "IX_wallet_ledger_entry_operation_key",
-            table: "wallet_ledger_entry",
-            column: "operation_key",
-            unique: true);
 
         migrationBuilder.CreateIndex(
             name: "IX_wallet_ledger_entry_wallet_hold_id",

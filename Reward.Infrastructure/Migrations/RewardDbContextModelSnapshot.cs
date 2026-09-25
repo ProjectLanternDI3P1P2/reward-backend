@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Reward.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Reward.Infrastructure.Persistence.Migrations
+namespace Reward.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardDbContext))]
-    [Migration("20260924145247_InitialRewardSchema")]
-    partial class InitialRewardSchema
+    partial class RewardDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -555,15 +552,9 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ItemInstanceId")
-                        .IsUnique()
-                        .HasDatabaseName("uq_active_listing_item")
-                        .HasFilter("status IN ('ACTIVE', 'RESERVED')");
+                    b.HasIndex("ItemInstanceId");
 
-                    b.ToTable("marketplace_listing", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_listing_quantity_price", "quantity > 0 AND price >= 0");
-                        });
+                    b.ToTable("marketplace_listing", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.MarketplaceReservation", b =>
@@ -600,10 +591,7 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ListingId")
-                        .IsUnique()
-                        .HasDatabaseName("uq_active_reservation_listing")
-                        .HasFilter("status = 'ACTIVE'");
+                    b.HasIndex("ListingId");
 
                     b.ToTable("marketplace_reservation", (string)null);
                 });
@@ -656,17 +644,11 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
                     b.HasIndex("ListingId");
 
                     b.HasIndex("ReservationId");
 
-                    b.ToTable("marketplace_transaction", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_transaction_idempotency_key_nonblank", "length(btrim(idempotency_key)) > 0");
-                        });
+                    b.ToTable("marketplace_transaction", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Modifier", b =>
@@ -765,13 +747,9 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ToInventoryId");
 
-                    b.HasIndex("TransactionId")
-                        .IsUnique();
+                    b.HasIndex("TransactionId");
 
-                    b.ToTable("ownership_transfer", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_ownership_transfer_quantity", "quantity > 0");
-                        });
+                    b.ToTable("ownership_transfer", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Placeholder", b =>
@@ -822,9 +800,6 @@ namespace Reward.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Rank")
-                        .IsUnique();
 
                     b.ToTable("rarity", (string)null);
                 });
@@ -1152,10 +1127,7 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TradeId");
 
-                    b.ToTable("trade_item", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_trade_item_quantity", "quantity > 0");
-                        });
+                    b.ToTable("trade_item", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Wallet", b =>
@@ -1180,13 +1152,7 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerId")
-                        .IsUnique();
-
-                    b.ToTable("wallet", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_wallet_balance", "balance >= 0");
-                        });
+                    b.ToTable("wallet", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.WalletHold", b =>
@@ -1233,21 +1199,13 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("HoldKey")
-                        .IsUnique();
-
                     b.HasIndex("TradeId");
 
                     b.HasIndex("TransactionId");
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("wallet_hold", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_wallet_hold_amount", "amount > 0");
-
-                            t.HasCheckConstraint("ck_wallet_hold_single_origin", "(id_transaction IS NOT NULL) <> (id_trade IS NOT NULL)");
-                        });
+                    b.ToTable("wallet_hold", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.WalletLedgerEntry", b =>
@@ -1281,17 +1239,11 @@ namespace Reward.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OperationKey")
-                        .IsUnique();
-
                     b.HasIndex("WalletHoldId");
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("wallet_ledger_entry", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_wallet_ledger_nonzero", "delta <> 0");
-                        });
+                    b.ToTable("wallet_ledger_entry", (string)null);
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Equipment", b =>
@@ -1489,7 +1441,7 @@ namespace Reward.Infrastructure.Persistence.Migrations
                     b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
                         .WithMany()
                         .HasForeignKey("ItemInstanceId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ItemInstance");
@@ -1500,7 +1452,7 @@ namespace Reward.Infrastructure.Persistence.Migrations
                     b.HasOne("Reward.Domain.Entities.MarketplaceListing", "Listing")
                         .WithMany()
                         .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Listing");
@@ -1511,13 +1463,12 @@ namespace Reward.Infrastructure.Persistence.Migrations
                     b.HasOne("Reward.Domain.Entities.MarketplaceListing", "Listing")
                         .WithMany()
                         .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Reward.Domain.Entities.MarketplaceReservation", "Reservation")
                         .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ReservationId");
 
                     b.Navigation("Listing");
 
@@ -1529,25 +1480,25 @@ namespace Reward.Infrastructure.Persistence.Migrations
                     b.HasOne("Reward.Domain.Entities.Inventory", "FromInventory")
                         .WithMany()
                         .HasForeignKey("FromInventoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
                         .WithMany()
                         .HasForeignKey("ItemInstanceId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Reward.Domain.Entities.Inventory", "ToInventory")
                         .WithMany()
                         .HasForeignKey("ToInventoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Reward.Domain.Entities.MarketplaceTransaction", "Transaction")
                         .WithMany()
                         .HasForeignKey("TransactionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("FromInventory");
@@ -1665,7 +1616,7 @@ namespace Reward.Infrastructure.Persistence.Migrations
                     b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
                         .WithMany()
                         .HasForeignKey("ItemInstanceId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Reward.Domain.Entities.Trade", "Trade")
@@ -1683,18 +1634,16 @@ namespace Reward.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Reward.Domain.Entities.Trade", "Trade")
                         .WithMany()
-                        .HasForeignKey("TradeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TradeId");
 
                     b.HasOne("Reward.Domain.Entities.MarketplaceTransaction", "Transaction")
                         .WithMany()
-                        .HasForeignKey("TransactionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TransactionId");
 
                     b.HasOne("Reward.Domain.Entities.Wallet", "Wallet")
                         .WithMany()
                         .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Trade");
@@ -1708,13 +1657,12 @@ namespace Reward.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Reward.Domain.Entities.WalletHold", "WalletHold")
                         .WithMany()
-                        .HasForeignKey("WalletHoldId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("WalletHoldId");
 
                     b.HasOne("Reward.Domain.Entities.Wallet", "Wallet")
                         .WithMany()
                         .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Wallet");
