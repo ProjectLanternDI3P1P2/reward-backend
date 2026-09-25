@@ -24,10 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\reward_player_v1.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\reward_placeholder_v1.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\reward_events_v1.proto" GrpcServices="None" />
     <!-- Consumers that use another language can retrieve the source contract from the package. -->
-    <None Include="Protos/reward_player_v1.proto" Pack="true" PackagePath="proto" />
+    <None Include="Protos/reward_placeholder_v1.proto" Pack="true" PackagePath="proto" />
     <None Include="Protos/reward_events_v1.proto" Pack="true" PackagePath="proto" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>

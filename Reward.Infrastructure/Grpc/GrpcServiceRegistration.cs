@@ -1,8 +1,8 @@
-using Reward.Contracts.V1;
-using Reward.Infrastructure.Grpc.Clients;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Reward.Contracts.V1;
+using Reward.Infrastructure.Grpc.Clients;
 using Reward.Infrastructure.Grpc.Configuration;
 
 namespace Reward.Infrastructure.Grpc;
@@ -11,34 +11,18 @@ public static class GrpcServiceRegistration
 {
     public static IServiceCollection AddGrpcConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        PlayerGrpcClientOptions playerGrpcClientOptions = configuration
-            .GetSection(PlayerGrpcClientOptions.SectionName)
-            .Get<PlayerGrpcClientOptions>() ?? new PlayerGrpcClientOptions();
+        var options = configuration.GetSection(PlaceholderGrpcClientOptions.SectionName).Get<PlaceholderGrpcClientOptions>()
+            ?? new PlaceholderGrpcClientOptions();
 
-        ValidatePlayerGrpcClientOptions(playerGrpcClientOptions);
-
-        return services
-            .AddSingleton(Options.Create(playerGrpcClientOptions))
-            .AddGrpcClient<RewardPlayerService.RewardPlayerServiceClient>(options =>
-                options.Address = new Uri(playerGrpcClientOptions.Address))
-            .Services
-            .Scan(scan => scan
-                .FromAssembliesOf(typeof(GrpcServiceRegistration))
-                .AddClasses(classes => classes.Where(c => c.Name.EndsWith("GrpcClient")))
-                .AsImplementedInterfaces()
-                .WithScopedLifetime());
-    }
-
-    private static void ValidatePlayerGrpcClientOptions(PlayerGrpcClientOptions options)
-    {
         if (!Uri.TryCreate(options.Address, UriKind.Absolute, out _))
         {
-            throw new InvalidOperationException("Grpc:Player:Address must be an absolute URI.");
+            throw new InvalidOperationException("Grpc:Placeholder:Address must be an absolute URI.");
         }
 
-        if (options.TimeoutSeconds <= 0)
-        {
-            throw new InvalidOperationException("Grpc:Player:TimeoutSeconds must be greater than zero.");
-        }
+        return services
+            .AddSingleton(Options.Create(options))
+            .AddGrpcClient<RewardPlaceholderService.RewardPlaceholderServiceClient>(client => client.Address = new Uri(options.Address))
+            .Services
+            .AddScoped<Reward.Application.Ports.IPlaceholderClient, PlaceholderGrpcClient>();
     }
 }
