@@ -1,6 +1,7 @@
 using Reward.Presentation.Extensions;
 using Reward.Application;
 using Reward.Infrastructure;
+using Reward.Infrastructure.Persistence.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,11 @@ builder.Services
     .AddApplicationServices();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    await app.Services.MigrateAndSeedDevelopmentDataAsync();
+}
 
 app.ConfigureStart();
 
