@@ -15,21 +15,21 @@ public sealed class CommandTransactionBehaviorTests
     {
         string databaseName = Guid.NewGuid().ToString();
         await using var dbContext = CreateInMemoryDbContext(databaseName);
-        var behavior = new CommandTransactionBehavior<CreatePlayerCommand, Unit>(dbContext);
-        var player = new Player { Id = Guid.NewGuid(), Name = "Committed" };
+        var behavior = new CommandTransactionBehavior<CreateCategoryCommand, Unit>(dbContext);
+        var category = new Category { Id = Guid.NewGuid(), Label = "Committed" };
 
         var result = await behavior.Handle(
-            new CreatePlayerCommand(player),
+            new CreateCategoryCommand(category),
             _ =>
             {
-                dbContext.Players.Add(player);
+                dbContext.Categories.Add(category);
                 return Task.FromResult(Unit.Value);
             },
             TestContext.Current.CancellationToken);
 
         result.Should().Be(Unit.Value);
         await using var verificationContext = CreateInMemoryDbContext(databaseName);
-        (await verificationContext.Players.FindAsync([player.Id], TestContext.Current.CancellationToken))
+        (await verificationContext.Categories.FindAsync([category.Id], TestContext.Current.CancellationToken))
             .Should().NotBeNull();
     }
 
@@ -38,21 +38,21 @@ public sealed class CommandTransactionBehaviorTests
     {
         string databaseName = Guid.NewGuid().ToString();
         await using var dbContext = CreateInMemoryDbContext(databaseName);
-        var behavior = new CommandTransactionBehavior<CreatePlayerCommand, Unit>(dbContext);
-        var player = new Player { Id = Guid.NewGuid(), Name = "Not committed" };
+        var behavior = new CommandTransactionBehavior<CreateCategoryCommand, Unit>(dbContext);
+        var category = new Category { Id = Guid.NewGuid(), Label = "Not committed" };
 
         Func<Task> action = async () => await behavior.Handle(
-            new CreatePlayerCommand(player),
+            new CreateCategoryCommand(category),
             _ =>
             {
-                dbContext.Players.Add(player);
+                dbContext.Categories.Add(category);
                 return Task.FromException<Unit>(new InvalidOperationException("Handler failed."));
             },
             TestContext.Current.CancellationToken);
 
         await action.Should().ThrowAsync<InvalidOperationException>();
         await using var verificationContext = CreateInMemoryDbContext(databaseName);
-        (await verificationContext.Players.FindAsync([player.Id], TestContext.Current.CancellationToken))
+        (await verificationContext.Categories.FindAsync([category.Id], TestContext.Current.CancellationToken))
             .Should().BeNull();
     }
 
@@ -65,5 +65,5 @@ public sealed class CommandTransactionBehaviorTests
         return new RewardDbContext(options);
     }
 
-    private sealed record CreatePlayerCommand(Player Player) : ICommand;
+    private sealed record CreateCategoryCommand(Category Category) : ICommand;
 }

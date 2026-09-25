@@ -16,8 +16,8 @@ message MessageEnvelopeMessage {
   bytes payload = 8;
 }
 
-message PlayerCreated {
-  string player_id = 1;
+message PlaceholderCreated {
+  string placeholder_id = 1;
   string name = 2;
   int32 attack = 3;
   int32 health = 4;
