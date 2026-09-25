@@ -13,11 +13,16 @@ public static class BuilderExtension
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddOpenApi();
         builder.Services.AddHealthChecks();
-        builder.Services.AddGrpc(options => options.Interceptors.Add<GrpcExceptionInterceptor>());
+        builder.Services.AddGrpc(options =>
+        {
+            options.Interceptors.Add<CorrelationIdInterceptor>();
+            options.Interceptors.Add<GrpcExceptionInterceptor>();
+        });
 
         ConfigureLogger(builder);
 
         builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+        builder.Services.AddTransient<CorrelationIdInterceptor>();
         builder.Services.AddTransient<GrpcExceptionInterceptor>();
         builder.Services.AddHttpClient();
 
@@ -30,6 +35,7 @@ public static class BuilderExtension
         {
             loggerConfiguration
                 .ReadFrom.Configuration(context.Configuration)
+                .Enrich.FromLogContext()
                 .Enrich.With<LowercaseLevelEnricher>()
                 .Destructure.With<IgnoreLoggingDestructuringPolicy>();
         }, preserveStaticLogger: true);
