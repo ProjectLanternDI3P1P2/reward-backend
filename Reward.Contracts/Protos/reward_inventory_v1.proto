@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package reward.v1;
+
+option csharp_namespace = "Reward.Contracts.V1";
+
+// Version 1 of the synchronous, service-to-service inventory read contract.
+service RewardInventoryService {
+  rpc GetHeroInventory (GetHeroInventoryRequest) returns (HeroInventoryReply);
+}
+
+message GetHeroInventoryRequest {
+  string hero_id = 1;
+}
+
+message HeroInventoryReply {
+  string hero_id = 1;
+  repeated InventoryItem items = 2;
+  repeated InventoryItem consumables = 3;
+}
+
+// Deliberately limited to fields consumers are allowed to use.
+message InventoryItem {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  string rarity = 4;
+  string state = 5;
+  int32 quantity = 6;
+  bool is_equipped = 7;
+  bool is_reserved = 8;
+}

@@ -14,6 +14,6 @@ version of the package:
 
 For a C# gRPC consumer, also reference `Grpc.Net.Client`, create a channel for the
 Reward service's internal endpoint, then construct
-`Reward.Contracts.V1.RewardPlayerService.RewardPlayerServiceClient`.
+`Reward.Contracts.V1.RewardInventoryService.RewardInventoryServiceClient`.
 
 The original `.proto` source is included in this package under `proto/`.
