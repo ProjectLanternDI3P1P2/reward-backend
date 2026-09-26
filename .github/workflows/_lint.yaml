@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   format:
-    name: dotnet format
+    name: CSharpier
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,7 +21,8 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
 
-      # --severity warn, not the default: the style rules in .editorconfig are set to
-      # warning, and the default threshold would only ever catch whitespace.
+      - name: Restore local .NET tools
+        run: dotnet tool restore
+
       - name: Verify formatting
-        run: dotnet format Reward.Presentation.slnx --verify-no-changes --severity warn
+        run: dotnet csharpier check .
