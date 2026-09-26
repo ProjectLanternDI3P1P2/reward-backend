@@ -94,4 +94,5 @@ public sealed class GetHeroInventoryGrpcIntegrationTests(InventoryGrpcFixture fi
         dbContext.AddRange(weaponCategory, potionCategory, common, epic, inventory, sword, potion, swordInstance, potionInstance, slot, equipment);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
+
 }
