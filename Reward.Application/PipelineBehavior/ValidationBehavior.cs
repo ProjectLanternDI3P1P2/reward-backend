@@ -8,7 +8,11 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken
+    )
     {
         ArgumentNullException.ThrowIfNull(next);
 
@@ -17,12 +21,13 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
             ValidationContext<TRequest> context = new(request);
 
             ValidationResult[] validationResults = await Task.WhenAll(
-                validators.Select(v =>
-                    v.ValidateAsync(context, cancellationToken)));
+                validators.Select(v => v.ValidateAsync(context, cancellationToken))
+            );
 
-            List<ValidationFailure> failures = [.. validationResults
-                .Where(r => r.Errors.Count > 0)
-                .SelectMany(r => r.Errors)];
+            List<ValidationFailure> failures =
+            [
+                .. validationResults.Where(r => r.Errors.Count > 0).SelectMany(r => r.Errors),
+            ];
 
             if (failures.Count > 0)
             {

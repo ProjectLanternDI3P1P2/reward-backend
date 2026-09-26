@@ -2,10 +2,7 @@ namespace Reward.Application.Features.InventoryUseCase.GetActiveEquipment;
 
 public sealed record ActiveEquipment(Guid HeroId, IReadOnlyList<ActiveEquipmentSlot> Slots);
 
-public sealed record ActiveEquipmentSlot(
-    Guid SlotId,
-    string SlotName,
-    EquippedItem? EquippedItem);
+public sealed record ActiveEquipmentSlot(Guid SlotId, string SlotName, EquippedItem? EquippedItem);
 
 public sealed record EquippedItem(
     Guid ItemInstanceId,
@@ -13,6 +10,7 @@ public sealed record EquippedItem(
     string Type,
     string Name,
     string Rarity,
-    IReadOnlyList<CombatModifier> Modifiers);
+    IReadOnlyList<CombatModifier> Modifiers
+);
 
 public sealed record CombatModifier(string Name, string Stat, decimal Value, string Type);

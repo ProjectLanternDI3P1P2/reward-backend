@@ -18,7 +18,7 @@ dotnet husky install
 ```
 
 `dotnet tool restore` installe les outils locaux declares dans
-`dotnet-tools.json`, dont Husky.Net. `dotnet husky install` configure le chemin
+`.config/dotnet-tools.json`, dont Husky.Net et CSharpier. `dotnet husky install` configure le chemin
 des hooks Git pour ce clone. Cette configuration est locale et n'est pas
 versionnee : chaque developpeur doit effectuer cette etape.
 
@@ -43,7 +43,7 @@ comportement attendu.
 
 Avant chaque commit, le hook :
 
-1. applique `dotnet format whitespace` aux fichiers `.cs` stages ;
+1. applique CSharpier aux fichiers `.cs` stages ;
 2. ajoute de nouveau au stage les fichiers eventuellement reformates.
 
 Le hook ne couvre volontairement que le formatage des fichiers C# modifies. La

@@ -11,15 +11,17 @@ public sealed class InventoryGrpcFixture : IAsyncLifetime
     private RewardWebApplicationFactory? factory;
     private GrpcChannel? channel;
 
-    public IServiceProvider Services => factory?.Services ?? throw new InvalidOperationException("Fixture not initialized.");
+    public IServiceProvider Services =>
+        factory?.Services ?? throw new InvalidOperationException("Fixture not initialized.");
 
     public RewardInventoryService.RewardInventoryServiceClient CreateClient()
     {
-        TestServer server = factory?.Server ?? throw new InvalidOperationException("Fixture not initialized.");
-        channel ??= GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions
-        {
-            HttpHandler = server.CreateHandler()
-        });
+        TestServer server =
+            factory?.Server ?? throw new InvalidOperationException("Fixture not initialized.");
+        channel ??= GrpcChannel.ForAddress(
+            "http://localhost",
+            new GrpcChannelOptions { HttpHandler = server.CreateHandler() }
+        );
 
         return new RewardInventoryService.RewardInventoryServiceClient(channel);
     }

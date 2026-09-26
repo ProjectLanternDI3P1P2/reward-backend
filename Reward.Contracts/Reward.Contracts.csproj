@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>2.0.0</Version> <!-- x-release-please-version -->
+    <Version>2.0.0</Version>
+    <!-- x-release-please-version -->
     <PackageId>Reward.Contracts</PackageId>
     <Description>Public Protocol Buffers and generated gRPC types exposed by the Reward service.</Description>
     <PackageTags>grpc;protobuf;contracts</PackageTags>
@@ -33,5 +33,4 @@
     <None Include="Protos/reward_events_v1.proto" Pack="true" PackagePath="proto" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
-
 </Project>

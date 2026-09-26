@@ -17,15 +17,21 @@ public sealed class GetPlaceholderByIdIntegrationTests(PlaceholdersControllerFix
         await using (AsyncServiceScope scope = Fixture.Services.CreateAsyncScope())
         {
             RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
-            dbContext.Placeholders.Add(new Placeholder { Id = placeholderId, Name = "Starter chest" });
+            dbContext.Placeholders.Add(
+                new Placeholder { Id = placeholderId, Name = "Starter chest" }
+            );
             await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            $"/api/v1/placeholders/{placeholderId}", TestContext.Current.CancellationToken);
+            $"/api/v1/placeholders/{placeholderId}",
+            TestContext.Current.CancellationToken
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PlaceholderResponse? body = await response.Content.ReadFromJsonAsync<PlaceholderResponse>(TestContext.Current.CancellationToken);
+        PlaceholderResponse? body = await response.Content.ReadFromJsonAsync<PlaceholderResponse>(
+            TestContext.Current.CancellationToken
+        );
         body.Should().BeEquivalentTo(new PlaceholderResponse(placeholderId, "Starter chest"));
     }
 
@@ -33,7 +39,9 @@ public sealed class GetPlaceholderByIdIntegrationTests(PlaceholdersControllerFix
     public async Task GetById_WhenPlaceholderDoesNotExist_ReturnsNotFound()
     {
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            $"/api/v1/placeholders/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+            $"/api/v1/placeholders/{Guid.NewGuid()}",
+            TestContext.Current.CancellationToken
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

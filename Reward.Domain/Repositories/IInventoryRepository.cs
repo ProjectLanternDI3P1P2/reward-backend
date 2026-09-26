@@ -10,9 +10,15 @@ public interface IInventoryRepository
 
     Task<Item?> GetItemByIdAsync(Guid itemId, CancellationToken cancellationToken);
 
-    Task<ItemInstance?> GetItemInstanceByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken);
+    Task<ItemInstance?> GetItemInstanceByIdempotencyKeyAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken
+    );
 
     void AddItemInstance(ItemInstance itemInstance);
 
-    Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(Guid heroId, CancellationToken cancellationToken);
+    Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(
+        Guid heroId,
+        CancellationToken cancellationToken
+    );
 }

@@ -10,23 +10,31 @@ public sealed class AddItemToInventoryCommandHandler(IInventoryRepository reposi
 {
     public async Task<AddItemToInventoryResult> Handle(
         AddItemToInventoryCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         ItemInstance? existing = await repository.GetItemInstanceByIdempotencyKeyAsync(
             request.IdempotencyKey,
-            cancellationToken);
+            cancellationToken
+        );
         if (existing is not null)
         {
             return new AddItemToInventoryResult(existing.Id, true);
         }
 
-        Inventory? inventory = await repository.GetByHeroIdForUpdateAsync(request.HeroId, cancellationToken);
+        Inventory? inventory = await repository.GetByHeroIdForUpdateAsync(
+            request.HeroId,
+            cancellationToken
+        );
         if (inventory is null)
         {
             throw new KeyNotFoundException($"Inventory for hero '{request.HeroId}' was not found.");
         }
 
-        existing = await repository.GetItemInstanceByIdempotencyKeyAsync(request.IdempotencyKey, cancellationToken);
+        existing = await repository.GetItemInstanceByIdempotencyKeyAsync(
+            request.IdempotencyKey,
+            cancellationToken
+        );
         if (existing is not null)
         {
             return new AddItemToInventoryResult(existing.Id, true);
@@ -50,7 +58,7 @@ public sealed class AddItemToInventoryCommandHandler(IInventoryRepository reposi
             Quantity = 1,
             IdempotencyKey = request.IdempotencyKey,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
         };
 
         inventory.Receive(itemInstance);

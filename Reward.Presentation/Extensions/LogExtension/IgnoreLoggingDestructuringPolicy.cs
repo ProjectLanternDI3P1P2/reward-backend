@@ -1,7 +1,7 @@
-using Serilog.Core;
-using Serilog.Events;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace Reward.Presentation.Extensions.LogExtension;
 
@@ -13,7 +13,8 @@ public sealed class IgnoreLoggingDestructuringPolicy : IDestructuringPolicy
     public bool TryDestructure(
         object value,
         ILogEventPropertyValueFactory propertyValueFactory,
-        [NotNullWhen(true)] out LogEventPropertyValue? result)
+        [NotNullWhen(true)] out LogEventPropertyValue? result
+    )
     {
         var type = value.GetType();
         var ignoredProperties = type.GetProperties()
@@ -30,14 +31,18 @@ public sealed class IgnoreLoggingDestructuringPolicy : IDestructuringPolicy
 
         foreach (PropertyInfo propertyInfo in type.GetTypeInfo().DeclaredProperties)
         {
-            bool shouldHideProperty = ignoredProperties.GetValueOrDefault(propertyInfo.Name) is not null;
+            bool shouldHideProperty =
+                ignoredProperties.GetValueOrDefault(propertyInfo.Name) is not null;
             object? valueToLog = shouldHideProperty
                 ? nameof(IgnoreLoggingAttribute)
                 : propertyInfo.GetValue(value);
 
-            logEventProperties.Add(new LogEventProperty(
-                propertyInfo.Name,
-                propertyValueFactory.CreatePropertyValue(valueToLog, true)));
+            logEventProperties.Add(
+                new LogEventProperty(
+                    propertyInfo.Name,
+                    propertyValueFactory.CreatePropertyValue(valueToLog, true)
+                )
+            );
         }
 
         result = new StructureValue(logEventProperties);

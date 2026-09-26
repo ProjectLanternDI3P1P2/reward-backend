@@ -8,18 +8,21 @@ using Reward.Infrastructure.Persistence;
 
 namespace Reward.Test.Integration;
 
-public sealed class RewardWebApplicationFactory(string connectionString) : WebApplicationFactory<Program>
+public sealed class RewardWebApplicationFactory(string connectionString)
+    : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration(configuration =>
         {
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = connectionString,
-                ["RabbitMq:Enabled"] = "false"
-            });
+            configuration.AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:DefaultConnection"] = connectionString,
+                    ["RabbitMq:Enabled"] = "false",
+                }
+            );
         });
 
         builder.ConfigureServices(services =>

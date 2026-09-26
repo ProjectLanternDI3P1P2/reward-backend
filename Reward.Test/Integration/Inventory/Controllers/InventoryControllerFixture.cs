@@ -6,8 +6,10 @@ public sealed class InventoryControllerFixture : IAsyncLifetime
     private TestDatabase? database;
     private RewardWebApplicationFactory? factory;
 
-    public IServiceProvider Services => factory?.Services ?? throw new InvalidOperationException("Fixture not initialized.");
-    public HttpClient HttpClient => factory?.CreateClient() ?? throw new InvalidOperationException("Fixture not initialized.");
+    public IServiceProvider Services =>
+        factory?.Services ?? throw new InvalidOperationException("Fixture not initialized.");
+    public HttpClient HttpClient =>
+        factory?.CreateClient() ?? throw new InvalidOperationException("Fixture not initialized.");
 
     public async ValueTask InitializeAsync()
     {

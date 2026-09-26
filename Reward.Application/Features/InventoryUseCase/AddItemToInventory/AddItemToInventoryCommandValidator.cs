@@ -2,7 +2,8 @@ using FluentValidation;
 
 namespace Reward.Application.Features.InventoryUseCase.AddItemToInventory;
 
-public sealed class AddItemToInventoryCommandValidator : AbstractValidator<AddItemToInventoryCommand>
+public sealed class AddItemToInventoryCommandValidator
+    : AbstractValidator<AddItemToInventoryCommand>
 {
     public AddItemToInventoryCommandValidator()
     {

@@ -1,7 +1,8 @@
 namespace Reward.Test.Integration.Inventory.Controllers;
 
 [Collection(InventoryControllerCollection.Name)]
-public abstract class InventoryControllerTestBase(InventoryControllerFixture fixture) : IAsyncLifetime
+public abstract class InventoryControllerTestBase(InventoryControllerFixture fixture)
+    : IAsyncLifetime
 {
     protected InventoryControllerFixture Fixture { get; } = fixture;
 

@@ -10,6 +10,11 @@ public sealed class PlaceholderConfiguration : IEntityTypeConfiguration<Placehol
     {
         builder.ToTable("placeholder");
         builder.HasKey(placeholder => placeholder.Id);
-        builder.Property(placeholder => placeholder.Name).HasMaxLength(100).IsRequired();
+        builder.Property(placeholder => placeholder.Id).HasColumnName("id");
+        builder
+            .Property(placeholder => placeholder.Name)
+            .HasColumnName("name")
+            .HasMaxLength(100)
+            .IsRequired();
     }
 }

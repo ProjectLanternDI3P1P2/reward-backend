@@ -1,15 +1,20 @@
-using Reward.Application.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Reward.Application.Messaging;
 
 namespace Reward.Infrastructure.Messaging;
 
 public static class MessagingServiceRegistration
 {
-    public static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        RabbitMqOptions options = configuration.GetSection(RabbitMqOptions.SectionName).Get<RabbitMqOptions>() ?? new RabbitMqOptions();
+        RabbitMqOptions options =
+            configuration.GetSection(RabbitMqOptions.SectionName).Get<RabbitMqOptions>()
+            ?? new RabbitMqOptions();
         Validate(options);
         services.AddSingleton(Options.Create(options));
 
@@ -25,9 +30,14 @@ public static class MessagingServiceRegistration
             throw new InvalidOperationException("RabbitMq:Port must be between 1 and 65535.");
         }
 
-        if (string.IsNullOrWhiteSpace(options.HostName) || string.IsNullOrWhiteSpace(options.ExchangeName))
+        if (
+            string.IsNullOrWhiteSpace(options.HostName)
+            || string.IsNullOrWhiteSpace(options.ExchangeName)
+        )
         {
-            throw new InvalidOperationException("RabbitMq:HostName and RabbitMq:ExchangeName are required.");
+            throw new InvalidOperationException(
+                "RabbitMq:HostName and RabbitMq:ExchangeName are required."
+            );
         }
     }
 }

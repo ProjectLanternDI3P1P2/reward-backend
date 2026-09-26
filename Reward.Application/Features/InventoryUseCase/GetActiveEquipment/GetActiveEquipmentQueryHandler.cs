@@ -7,11 +7,15 @@ namespace Reward.Application.Features.InventoryUseCase.GetActiveEquipment;
 public sealed class GetActiveEquipmentQueryHandler(IInventoryRepository repository)
     : IRequestHandler<GetActiveEquipmentQuery, ActiveEquipment?>
 {
-    public async Task<ActiveEquipment?> Handle(GetActiveEquipmentQuery request, CancellationToken cancellationToken)
+    public async Task<ActiveEquipment?> Handle(
+        GetActiveEquipmentQuery request,
+        CancellationToken cancellationToken
+    )
     {
         ActiveEquipmentSnapshot? snapshot = await repository.GetActiveEquipmentByHeroIdAsync(
             request.HeroId,
-            cancellationToken);
+            cancellationToken
+        );
 
         if (snapshot is null)
         {
@@ -20,14 +24,16 @@ public sealed class GetActiveEquipmentQueryHandler(IInventoryRepository reposito
 
         return new ActiveEquipment(
             snapshot.HeroId,
-            snapshot.Slots
-                .OrderBy(slot => slot.Slot.Name)
+            snapshot
+                .Slots.OrderBy(slot => slot.Slot.Name)
                 .ThenBy(slot => slot.Slot.Id)
                 .Select(slot => new ActiveEquipmentSlot(
                     slot.Slot.Id,
                     slot.Slot.Name,
-                    slot.Equipment is null ? null : MapEquippedItem(slot.Equipment)))
-                .ToList());
+                    slot.Equipment is null ? null : MapEquippedItem(slot.Equipment)
+                ))
+                .ToList()
+        );
     }
 
     private static EquippedItem MapEquippedItem(Equipment equipment)
@@ -39,8 +45,7 @@ public sealed class GetActiveEquipmentQueryHandler(IInventoryRepository reposito
             item.Category.Label,
             item.Name,
             item.Rarity.Label,
-            item.Modifiers
-                .Select(itemModifier => itemModifier.Modifier)
+            item.Modifiers.Select(itemModifier => itemModifier.Modifier)
                 .OrderBy(modifier => modifier.Stat)
                 .ThenBy(modifier => modifier.Name)
                 .ThenBy(modifier => modifier.Id)
@@ -48,7 +53,9 @@ public sealed class GetActiveEquipmentQueryHandler(IInventoryRepository reposito
                     modifier.Name,
                     modifier.Stat,
                     modifier.Value,
-                    modifier.Type))
-                .ToList());
+                    modifier.Type
+                ))
+                .ToList()
+        );
     }
 }

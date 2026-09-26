@@ -1,13 +1,18 @@
-using MediatR;
 using System.Diagnostics;
+using MediatR;
 using ILogger = Serilog.ILogger;
 
 namespace Reward.Application.PipelineBehavior;
 
-public class LoggingBehavior<TRequest, TResponse>(ILogger logger) : IPipelineBehavior<TRequest, TResponse>
+public class LoggingBehavior<TRequest, TResponse>(ILogger logger)
+    : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken
+    )
     {
         Stopwatch sw = Stopwatch.StartNew();
 
@@ -22,7 +27,8 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger logger) : IPipelineBeh
             "[HandlerMetrics] {RequestType} => {ResponseType} | DurationMs={DurationMs}",
             requestType,
             responseType,
-            sw.Elapsed.TotalMilliseconds);
+            sw.Elapsed.TotalMilliseconds
+        );
 
         return response;
     }

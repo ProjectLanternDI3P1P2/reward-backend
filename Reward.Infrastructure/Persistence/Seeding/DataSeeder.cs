@@ -10,7 +10,10 @@ public static class DataSeeder
     /// Seeds reproducible development data for inventory browsing.
     /// It is safe to call repeatedly: an existing inventory prevents a second seed.
     /// </summary>
-    public static async Task SeedAsync(RewardDbContext context, CancellationToken cancellationToken = default)
+    public static async Task SeedAsync(
+        RewardDbContext context,
+        CancellationToken cancellationToken = default
+    )
     {
         if (await context.Inventories.AnyAsync(cancellationToken))
         {
@@ -27,7 +30,11 @@ public static class DataSeeder
         await context.EquipmentSlots.AddRangeAsync(slots, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
-        IReadOnlyList<Item> items = RewardFakeDataGenerator.GenerateItems(categories, rarities, now);
+        IReadOnlyList<Item> items = RewardFakeDataGenerator.GenerateItems(
+            categories,
+            rarities,
+            now
+        );
         await context.Items.AddRangeAsync(items, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
@@ -48,7 +55,8 @@ public static class DataSeeder
         IReadOnlyList<Inventory> inventories,
         IReadOnlyList<Item> items,
         IReadOnlyList<Category> categories,
-        DateTimeOffset now)
+        DateTimeOffset now
+    )
     {
         var faker = new Faker("en") { Random = new Randomizer(380) };
         var instances = new List<ItemInstance>();
@@ -59,16 +67,18 @@ public static class DataSeeder
             {
                 string category = categories.Single(value => value.Id == item.CategoryId).Label;
                 bool consumable = category is "POTION" or "VIAL";
-                instances.Add(new ItemInstance
-                {
-                    Id = Guid.NewGuid(),
-                    ItemId = item.Id,
-                    InventoryId = inventory.Id,
-                    Status = faker.Random.Bool(0.15f) ? "RESERVED" : "AVAILABLE",
-                    Quantity = consumable ? faker.Random.Int(1, 10) : 1,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                });
+                instances.Add(
+                    new ItemInstance
+                    {
+                        Id = Guid.NewGuid(),
+                        ItemId = item.Id,
+                        InventoryId = inventory.Id,
+                        Status = faker.Random.Bool(0.15f) ? "RESERVED" : "AVAILABLE",
+                        Quantity = consumable ? faker.Random.Int(1, 10) : 1,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                    }
+                );
             }
         }
 
@@ -79,28 +89,33 @@ public static class DataSeeder
         IReadOnlyList<Inventory> inventories,
         IReadOnlyList<ItemInstance> instances,
         IReadOnlyList<EquipmentSlot> slots,
-        DateTimeOffset now)
+        DateTimeOffset now
+    )
     {
         var equipment = new List<Equipment>();
 
         foreach (Inventory inventory in inventories)
         {
             IEnumerable<ItemInstance> available = instances
-                .Where(instance => instance.InventoryId == inventory.Id && instance.Status == "AVAILABLE")
+                .Where(instance =>
+                    instance.InventoryId == inventory.Id && instance.Status == "AVAILABLE"
+                )
                 .Take(2);
 
             foreach ((ItemInstance itemInstance, EquipmentSlot slot) in available.Zip(slots))
             {
-                equipment.Add(new Equipment
-                {
-                    Id = Guid.NewGuid(),
-                    HeroId = inventory.HeroId,
-                    ItemInstanceId = itemInstance.Id,
-                    SlotId = slot.Id,
-                    Quantity = 1,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                });
+                equipment.Add(
+                    new Equipment
+                    {
+                        Id = Guid.NewGuid(),
+                        HeroId = inventory.HeroId,
+                        ItemInstanceId = itemInstance.Id,
+                        SlotId = slot.Id,
+                        Quantity = 1,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                    }
+                );
             }
         }
 

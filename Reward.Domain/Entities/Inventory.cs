@@ -17,9 +17,18 @@ public sealed class Inventory
     {
         ArgumentNullException.ThrowIfNull(itemInstance);
 
-        bool isPotion = string.Equals(itemInstance.Item.Category.Label, "POTION", StringComparison.OrdinalIgnoreCase);
+        bool isPotion = string.Equals(
+            itemInstance.Item.Category.Label,
+            "POTION",
+            StringComparison.OrdinalIgnoreCase
+        );
         int occupiedSlots = ItemInstances.Count(instance =>
-            string.Equals(instance.Item.Category.Label, "POTION", StringComparison.OrdinalIgnoreCase) == isPotion);
+            string.Equals(
+                instance.Item.Category.Label,
+                "POTION",
+                StringComparison.OrdinalIgnoreCase
+            ) == isPotion
+        );
         int capacity = isPotion
             ? Math.Min(PotionCapacity, MaximumPotionSlots)
             : Math.Min(ItemCapacity, MaximumItemSlots);
