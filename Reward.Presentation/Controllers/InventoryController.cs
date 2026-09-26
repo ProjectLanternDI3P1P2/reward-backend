@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Reward.Application.Features.InventoryUseCase.AddItemToInventory;
 using Reward.Application.Features.InventoryUseCase.GetHeroInventory;
+using Reward.Application.Features.InventoryUseCase.RemoveItemFromInventory;
 using Reward.Presentation.DTO;
 
 namespace Reward.Presentation.Controllers;
@@ -38,5 +39,20 @@ public sealed class InventoryController(ISender sender) : ControllerBase
             cancellationToken
         );
         return inventory is null ? NotFound() : Ok(inventory);
+    }
+
+    [HttpDelete("items/{itemInstanceId:guid}")]
+    public async Task<IActionResult> RemoveItemAsync(
+        Guid heroId,
+        Guid itemInstanceId,
+        CancellationToken cancellationToken
+    )
+    {
+        await sender.Send(
+            new RemoveItemFromInventoryCommand(heroId, itemInstanceId),
+            cancellationToken
+        );
+
+        return NoContent();
     }
 }

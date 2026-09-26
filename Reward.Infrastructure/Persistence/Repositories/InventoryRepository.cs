@@ -31,6 +31,8 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
             .Include(inventory => inventory.ItemInstances)
                 .ThenInclude(itemInstance => itemInstance.Item)
                     .ThenInclude(item => item.Category)
+            .Include(inventory => inventory.ItemInstances)
+                .ThenInclude(itemInstance => itemInstance.Equipment)
             .SingleOrDefaultAsync(cancellationToken);
 
     public Task<Item?> GetItemByIdAsync(Guid itemId, CancellationToken cancellationToken) =>
@@ -49,6 +51,12 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
 
     public void AddItemInstance(ItemInstance itemInstance) =>
         dbContext.ItemInstances.Add(itemInstance);
+
+    public void RemoveItemInstance(ItemInstance itemInstance)
+    {
+        dbContext.Equipment.RemoveRange(itemInstance.Equipment);
+        dbContext.ItemInstances.Remove(itemInstance);
+    }
 
     public async Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(
         Guid heroId,
