@@ -5,4 +5,6 @@ namespace Reward.Domain.Repositories;
 public interface IInventoryRepository
 {
     Task<Inventory?> GetByHeroIdAsync(Guid heroId, CancellationToken cancellationToken);
+
+    Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(Guid heroId, CancellationToken cancellationToken);
 }
