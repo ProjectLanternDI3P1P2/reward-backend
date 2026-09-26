@@ -6,6 +6,7 @@ public sealed class ItemInstance
     public Guid ItemId { get; set; }
     public Guid InventoryId { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string? IdempotencyKey { get; set; }
     public int Quantity { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
