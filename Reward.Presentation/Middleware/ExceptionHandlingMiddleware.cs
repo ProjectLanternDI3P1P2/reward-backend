@@ -22,11 +22,32 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             logger.Warning(exception, "Validation error occurred");
             await HandleValidationExceptionAsync(context, exception);
         }
+        catch (InvalidOperationException exception)
+        {
+            logger.Warning(exception, "Business conflict occurred");
+            await HandleConflictExceptionAsync(context, exception);
+        }
         catch (Exception exception)
         {
             logger.Error(exception, "Unhandled exception occurred");
             await HandleExceptionAsync(context, exception);
         }
+    }
+
+    private static async Task HandleConflictExceptionAsync(HttpContext context, InvalidOperationException exception)
+    {
+        var problemDetails = new ProblemDetails
+        {
+            Type = "https://httpstatuses.com/409",
+            Title = "Conflict",
+            Detail = exception.Message,
+            Status = StatusCodes.Status409Conflict,
+            Instance = context.Request.Path
+        };
+
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        context.Response.ContentType = "application/problem+json";
+        await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
     private static async Task HandleNotFoundExceptionAsync(HttpContext context, KeyNotFoundException exception)

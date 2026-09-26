@@ -20,6 +20,25 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
                 .ThenInclude(itemInstance => itemInstance.Equipment)
             .SingleOrDefaultAsync(inventory => inventory.HeroId == heroId, cancellationToken);
 
+    public Task<Inventory?> GetByHeroIdForUpdateAsync(Guid heroId, CancellationToken cancellationToken) =>
+        dbContext.Inventories
+            .FromSqlInterpolated($"SELECT * FROM inventory WHERE hero_id = {heroId} FOR UPDATE")
+            .Include(inventory => inventory.ItemInstances)
+                .ThenInclude(itemInstance => itemInstance.Item)
+                    .ThenInclude(item => item.Category)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public Task<Item?> GetItemByIdAsync(Guid itemId, CancellationToken cancellationToken) =>
+        dbContext.Items
+            .Include(item => item.Category)
+            .SingleOrDefaultAsync(item => item.Id == itemId, cancellationToken);
+
+    public Task<ItemInstance?> GetItemInstanceByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken) =>
+        dbContext.ItemInstances
+            .SingleOrDefaultAsync(itemInstance => itemInstance.IdempotencyKey == idempotencyKey, cancellationToken);
+
+    public void AddItemInstance(ItemInstance itemInstance) => dbContext.ItemInstances.Add(itemInstance);
+
     public async Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(
         Guid heroId,
         CancellationToken cancellationToken)

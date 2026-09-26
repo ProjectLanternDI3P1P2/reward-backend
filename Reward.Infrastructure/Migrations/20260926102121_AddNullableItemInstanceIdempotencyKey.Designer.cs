@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Reward.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Reward.Infrastructure.Persistence;
 namespace Reward.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardDbContext))]
-    partial class RewardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260926102121_AddNullableItemInstanceIdempotencyKey")]
+    partial class AddNullableItemInstanceIdempotencyKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
