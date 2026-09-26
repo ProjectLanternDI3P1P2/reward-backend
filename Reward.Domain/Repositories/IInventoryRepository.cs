@@ -17,6 +17,8 @@ public interface IInventoryRepository
 
     void AddItemInstance(ItemInstance itemInstance);
 
+    void RemoveItemInstance(ItemInstance itemInstance);
+
     Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(
         Guid heroId,
         CancellationToken cancellationToken
