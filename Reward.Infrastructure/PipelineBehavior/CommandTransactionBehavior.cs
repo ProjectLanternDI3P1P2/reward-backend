@@ -1,5 +1,6 @@
 using Reward.Application.Abstractions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Reward.Infrastructure.Persistence;
 
 namespace Reward.Infrastructure.PipelineBehavior;
@@ -15,13 +16,22 @@ public sealed class CommandTransactionBehavior<TRequest, TResponse>(RewardDbCont
     {
         ArgumentNullException.ThrowIfNull(next);
 
-        TResponse response = await next(cancellationToken);
-
-        if (request is ICommand)
+        if (request is not ICommand)
         {
-            await dbContext.SaveChangesAsync(cancellationToken);
+            return await next(cancellationToken);
         }
 
-        return response;
+        if (!dbContext.Database.IsRelational())
+        {
+            TResponse response = await next(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return response;
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        TResponse transactionalResponse = await next(cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return transactionalResponse;
     }
 }
