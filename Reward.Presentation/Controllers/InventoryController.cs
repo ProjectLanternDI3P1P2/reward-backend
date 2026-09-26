@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 using Reward.Application.Features.InventoryUseCase.AddItemToInventory;
+using Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 using Reward.Presentation.DTO;
 
 namespace Reward.Presentation.Controllers;
@@ -14,11 +14,13 @@ public sealed class InventoryController(ISender sender) : ControllerBase
     public async Task<IActionResult> AddItemAsync(
         Guid heroId,
         AddItemToInventoryRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         AddItemToInventoryResult result = await sender.Send<AddItemToInventoryResult>(
             new AddItemToInventoryCommand(heroId, request.ItemId, request.IdempotencyKey),
-            cancellationToken);
+            cancellationToken
+        );
 
         return result.AlreadyExists
             ? Ok(result)
@@ -26,9 +28,15 @@ public sealed class InventoryController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetByHeroIdAsync(Guid heroId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetByHeroIdAsync(
+        Guid heroId,
+        CancellationToken cancellationToken
+    )
     {
-        HeroInventory? inventory = await sender.Send(new GetHeroInventoryQuery(heroId), cancellationToken);
+        HeroInventory? inventory = await sender.Send(
+            new GetHeroInventoryQuery(heroId),
+            cancellationToken
+        );
         return inventory is null ? NotFound() : Ok(inventory);
     }
 }

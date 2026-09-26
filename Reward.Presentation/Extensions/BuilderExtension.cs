@@ -31,14 +31,16 @@ public static class BuilderExtension
 
     private static void ConfigureLogger(WebApplicationBuilder builder)
     {
-        builder.Host.UseSerilog((context, loggerConfiguration) =>
-        {
-            loggerConfiguration
-                .ReadFrom.Configuration(context.Configuration)
-                .Enrich.FromLogContext()
-                .Enrich.With<LowercaseLevelEnricher>()
-                .Destructure.With<IgnoreLoggingDestructuringPolicy>();
-        }, preserveStaticLogger: true);
-
+        builder.Host.UseSerilog(
+            (context, loggerConfiguration) =>
+            {
+                loggerConfiguration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .Enrich.FromLogContext()
+                    .Enrich.With<LowercaseLevelEnricher>()
+                    .Destructure.With<IgnoreLoggingDestructuringPolicy>();
+            },
+            preserveStaticLogger: true
+        );
     }
 }

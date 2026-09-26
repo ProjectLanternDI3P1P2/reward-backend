@@ -27,7 +27,7 @@ public sealed class TestDatabase : IAsyncDisposable
 
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(adminConnectionString)
         {
-            Database = databaseName
+            Database = databaseName,
         };
         string connectionString = connectionStringBuilder.ConnectionString;
 
@@ -41,11 +41,10 @@ public sealed class TestDatabase : IAsyncDisposable
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        Respawner respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
-        {
-            DbAdapter = DbAdapter.Postgres,
-            SchemasToInclude = ["public"]
-        });
+        Respawner respawner = await Respawner.CreateAsync(
+            connection,
+            new RespawnerOptions { DbAdapter = DbAdapter.Postgres, SchemasToInclude = ["public"] }
+        );
 
         return new TestDatabase(databaseName, connectionString, respawner);
     }
@@ -61,7 +60,10 @@ public sealed class TestDatabase : IAsyncDisposable
     {
         await using var connection = new NpgsqlConnection(GetAdminConnectionString());
         await connection.OpenAsync();
-        await using var command = new NpgsqlCommand($"DROP DATABASE IF EXISTS {QuoteIdentifier(databaseName)} WITH (FORCE)", connection);
+        await using var command = new NpgsqlCommand(
+            $"DROP DATABASE IF EXISTS {QuoteIdentifier(databaseName)} WITH (FORCE)",
+            connection
+        );
         await command.ExecuteNonQueryAsync();
     }
 
@@ -69,14 +71,20 @@ public sealed class TestDatabase : IAsyncDisposable
     {
         await using var connection = new NpgsqlConnection(adminConnectionString);
         await connection.OpenAsync();
-        await using var existsCommand = new NpgsqlCommand("SELECT 1 FROM pg_database WHERE datname = @databaseName", connection);
+        await using var existsCommand = new NpgsqlCommand(
+            "SELECT 1 FROM pg_database WHERE datname = @databaseName",
+            connection
+        );
         existsCommand.Parameters.AddWithValue("databaseName", databaseName);
         if (await existsCommand.ExecuteScalarAsync() is not null)
         {
             return;
         }
 
-        await using var createCommand = new NpgsqlCommand($"CREATE DATABASE {QuoteIdentifier(databaseName)}", connection);
+        await using var createCommand = new NpgsqlCommand(
+            $"CREATE DATABASE {QuoteIdentifier(databaseName)}",
+            connection
+        );
         await createCommand.ExecuteNonQueryAsync();
     }
 
@@ -84,5 +92,6 @@ public sealed class TestDatabase : IAsyncDisposable
         Environment.GetEnvironmentVariable(ConnectionStringEnvironmentVariable)
         ?? "Host=localhost;Port=5433;Database=reward;Username=reward";
 
-    private static string QuoteIdentifier(string identifier) => $"\"{identifier.Replace("\"", "\"\"")}\"";
+    private static string QuoteIdentifier(string identifier) =>
+        $"\"{identifier.Replace("\"", "\"\"")}\"";
 }

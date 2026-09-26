@@ -4,7 +4,8 @@ using ILogger = Serilog.ILogger;
 
 namespace Reward.Presentation.Middleware;
 
-public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment environment) : IMiddleware
+public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment environment)
+    : IMiddleware
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -34,7 +35,10 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         }
     }
 
-    private static async Task HandleConflictExceptionAsync(HttpContext context, InvalidOperationException exception)
+    private static async Task HandleConflictExceptionAsync(
+        HttpContext context,
+        InvalidOperationException exception
+    )
     {
         var problemDetails = new ProblemDetails
         {
@@ -42,7 +46,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             Title = "Conflict",
             Detail = exception.Message,
             Status = StatusCodes.Status409Conflict,
-            Instance = context.Request.Path
+            Instance = context.Request.Path,
         };
 
         context.Response.StatusCode = StatusCodes.Status409Conflict;
@@ -50,7 +54,10 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
-    private static async Task HandleNotFoundExceptionAsync(HttpContext context, KeyNotFoundException exception)
+    private static async Task HandleNotFoundExceptionAsync(
+        HttpContext context,
+        KeyNotFoundException exception
+    )
     {
         var problemDetails = new ProblemDetails
         {
@@ -58,7 +65,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             Title = "Resource not found",
             Detail = exception.Message,
             Status = StatusCodes.Status404NotFound,
-            Instance = context.Request.Path
+            Instance = context.Request.Path,
         };
 
         context.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -66,13 +73,17 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
-    private static async Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
+    private static async Task HandleValidationExceptionAsync(
+        HttpContext context,
+        ValidationException exception
+    )
     {
-        var errors = exception.Errors
-            .GroupBy(error => error.PropertyName)
+        var errors = exception
+            .Errors.GroupBy(error => error.PropertyName)
             .ToDictionary(
                 group => ToCamelCase(group.Key),
-                group => group.Select(error => error.ErrorMessage).ToArray());
+                group => group.Select(error => error.ErrorMessage).ToArray()
+            );
 
         var problemDetails = new ValidationProblemDetails(errors)
         {
@@ -80,7 +91,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             Title = "Validation error",
             Detail = "One or more validation errors occurred.",
             Status = StatusCodes.Status422UnprocessableEntity,
-            Instance = context.Request.Path
+            Instance = context.Request.Path,
         };
 
         context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
@@ -106,7 +117,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             Title = "Internal server error",
             Detail = environment.IsDevelopment() ? exception.Message : null,
             Status = StatusCodes.Status500InternalServerError,
-            Instance = context.Request.Path
+            Instance = context.Request.Path,
         };
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;

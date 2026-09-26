@@ -3,7 +3,8 @@ namespace Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 public sealed record HeroInventory(
     Guid HeroId,
     IReadOnlyList<InventoryItem> Items,
-    IReadOnlyList<InventoryItem> Consumables);
+    IReadOnlyList<InventoryItem> Consumables
+);
 
 public sealed record InventoryItem(
     Guid Id,
@@ -13,4 +14,5 @@ public sealed record InventoryItem(
     string State,
     int Quantity,
     bool IsEquipped,
-    bool IsReserved);
+    bool IsReserved
+);

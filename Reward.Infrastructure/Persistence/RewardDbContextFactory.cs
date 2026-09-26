@@ -17,9 +17,11 @@ public sealed class RewardDbContextFactory : IDesignTimeDbContextFactory<RewardD
             .AddEnvironmentVariables()
             .Build();
 
-        string connectionString = configuration.GetConnectionString("DefaultConnection")
+        string connectionString =
+            configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
-                "ConnectionStrings:DefaultConnection is required to create EF Core migrations.");
+                "ConnectionStrings:DefaultConnection is required to create EF Core migrations."
+            );
 
         DbContextOptions<RewardDbContext> options = new DbContextOptionsBuilder<RewardDbContext>()
             .UseNpgsql(connectionString)
@@ -30,7 +32,11 @@ public sealed class RewardDbContextFactory : IDesignTimeDbContextFactory<RewardD
 
     private static string FindPresentationConfigurationDirectory()
     {
-        for (DirectoryInfo? directory = new(Directory.GetCurrentDirectory()); directory is not null; directory = directory.Parent)
+        for (
+            DirectoryInfo? directory = new(Directory.GetCurrentDirectory());
+            directory is not null;
+            directory = directory.Parent
+        )
         {
             string presentationDirectory = Path.Combine(directory.FullName, "Reward.Presentation");
             if (File.Exists(Path.Combine(presentationDirectory, "appsettings.json")))
@@ -39,6 +45,8 @@ public sealed class RewardDbContextFactory : IDesignTimeDbContextFactory<RewardD
             }
         }
 
-        throw new InvalidOperationException("Could not find Reward.Presentation/appsettings.json from the current directory.");
+        throw new InvalidOperationException(
+            "Could not find Reward.Presentation/appsettings.json from the current directory."
+        );
     }
 }

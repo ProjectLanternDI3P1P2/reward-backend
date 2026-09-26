@@ -1,15 +1,15 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Reward.Domain.Entities;
 using Reward.Domain.Repositories;
-using System.Data;
 
 namespace Reward.Infrastructure.Persistence.Repositories;
 
 public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryRepository
 {
     public Task<Inventory?> GetByHeroIdAsync(Guid heroId, CancellationToken cancellationToken) =>
-        dbContext.Inventories
-            .AsNoTracking()
+        dbContext
+            .Inventories.AsNoTracking()
             .Include(inventory => inventory.ItemInstances)
                 .ThenInclude(itemInstance => itemInstance.Item)
                     .ThenInclude(item => item.Category)
@@ -20,37 +20,50 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
                 .ThenInclude(itemInstance => itemInstance.Equipment)
             .SingleOrDefaultAsync(inventory => inventory.HeroId == heroId, cancellationToken);
 
-    public Task<Inventory?> GetByHeroIdForUpdateAsync(Guid heroId, CancellationToken cancellationToken) =>
-        dbContext.Inventories
-            .FromSqlInterpolated($"SELECT * FROM inventory WHERE hero_id = {heroId} FOR UPDATE")
+    public Task<Inventory?> GetByHeroIdForUpdateAsync(
+        Guid heroId,
+        CancellationToken cancellationToken
+    ) =>
+        dbContext
+            .Inventories.FromSqlInterpolated(
+                $"SELECT * FROM inventory WHERE hero_id = {heroId} FOR UPDATE"
+            )
             .Include(inventory => inventory.ItemInstances)
                 .ThenInclude(itemInstance => itemInstance.Item)
                     .ThenInclude(item => item.Category)
             .SingleOrDefaultAsync(cancellationToken);
 
     public Task<Item?> GetItemByIdAsync(Guid itemId, CancellationToken cancellationToken) =>
-        dbContext.Items
-            .Include(item => item.Category)
+        dbContext
+            .Items.Include(item => item.Category)
             .SingleOrDefaultAsync(item => item.Id == itemId, cancellationToken);
 
-    public Task<ItemInstance?> GetItemInstanceByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken) =>
-        dbContext.ItemInstances
-            .SingleOrDefaultAsync(itemInstance => itemInstance.IdempotencyKey == idempotencyKey, cancellationToken);
+    public Task<ItemInstance?> GetItemInstanceByIdempotencyKeyAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken
+    ) =>
+        dbContext.ItemInstances.SingleOrDefaultAsync(
+            itemInstance => itemInstance.IdempotencyKey == idempotencyKey,
+            cancellationToken
+        );
 
-    public void AddItemInstance(ItemInstance itemInstance) => dbContext.ItemInstances.Add(itemInstance);
+    public void AddItemInstance(ItemInstance itemInstance) =>
+        dbContext.ItemInstances.Add(itemInstance);
 
     public async Task<ActiveEquipmentSnapshot?> GetActiveEquipmentByHeroIdAsync(
         Guid heroId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         // Both reads share a repeatable-read snapshot so a concurrent equipment change
         // cannot produce slots and modifiers from different points in time.
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
             IsolationLevel.RepeatableRead,
-            cancellationToken);
+            cancellationToken
+        );
 
-        bool heroExists = await dbContext.Inventories
-            .AsNoTracking()
+        bool heroExists = await dbContext
+            .Inventories.AsNoTracking()
             .AnyAsync(inventory => inventory.HeroId == heroId, cancellationToken);
 
         if (!heroExists)
@@ -58,12 +71,12 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
             return null;
         }
 
-        List<EquipmentSlot> slots = await dbContext.EquipmentSlots
-            .AsNoTracking()
+        List<EquipmentSlot> slots = await dbContext
+            .EquipmentSlots.AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        List<Equipment> equippedItems = await dbContext.Equipment
-            .AsNoTracking()
+        List<Equipment> equippedItems = await dbContext
+            .Equipment.AsNoTracking()
             .Where(equipment => equipment.HeroId == heroId)
             .Include(equipment => equipment.ItemInstance)
                 .ThenInclude(itemInstance => itemInstance.Item)
@@ -77,12 +90,18 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
                         .ThenInclude(itemModifier => itemModifier.Modifier)
             .ToListAsync(cancellationToken);
 
-        Dictionary<Guid, Equipment> equipmentBySlotId = equippedItems.ToDictionary(equipment => equipment.SlotId);
+        Dictionary<Guid, Equipment> equipmentBySlotId = equippedItems.ToDictionary(equipment =>
+            equipment.SlotId
+        );
 
         return new ActiveEquipmentSnapshot(
             heroId,
-            slots.Select(slot => new ActiveEquipmentSlotSnapshot(
-                slot,
-                equipmentBySlotId.GetValueOrDefault(slot.Id))).ToList());
+            slots
+                .Select(slot => new ActiveEquipmentSlotSnapshot(
+                    slot,
+                    equipmentBySlotId.GetValueOrDefault(slot.Id)
+                ))
+                .ToList()
+        );
     }
 }

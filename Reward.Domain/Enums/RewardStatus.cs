@@ -7,5 +7,5 @@ public enum RewardStatus
     Pending,
     Active,
     Completed,
-    Failed
+    Failed,
 }

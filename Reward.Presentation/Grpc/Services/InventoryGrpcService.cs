@@ -7,16 +7,23 @@ using Reward.Contracts.V1;
 namespace Reward.Presentation.Grpc.Services;
 
 /// <summary>Exposes the versioned inventory read contract to other backend services.</summary>
-public sealed class InventoryGrpcService(ISender sender) : RewardInventoryService.RewardInventoryServiceBase
+public sealed class InventoryGrpcService(ISender sender)
+    : RewardInventoryService.RewardInventoryServiceBase
 {
-    public override async Task<HeroInventoryReply> GetHeroInventory(GetHeroInventoryRequest request, ServerCallContext context)
+    public override async Task<HeroInventoryReply> GetHeroInventory(
+        GetHeroInventoryRequest request,
+        ServerCallContext context
+    )
     {
         if (!Guid.TryParse(request.HeroId, out Guid heroId))
         {
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "hero_id must be a GUID."));
+            throw new RpcException(
+                new Status(StatusCode.InvalidArgument, "hero_id must be a GUID.")
+            );
         }
 
-        HeroInventory inventory = await sender.Send(new GetHeroInventoryQuery(heroId), context.CancellationToken)
+        HeroInventory inventory =
+            await sender.Send(new GetHeroInventoryQuery(heroId), context.CancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "Hero inventory not found."));
 
         var reply = new HeroInventoryReply { HeroId = inventory.HeroId.ToString() };
@@ -27,39 +34,45 @@ public sealed class InventoryGrpcService(ISender sender) : RewardInventoryServic
 
     public override async Task<ActiveEquipmentReply> GetActiveEquipment(
         GetActiveEquipmentRequest request,
-        ServerCallContext context)
+        ServerCallContext context
+    )
     {
         if (!Guid.TryParse(request.HeroId, out Guid heroId))
         {
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "hero_id must be a GUID."));
+            throw new RpcException(
+                new Status(StatusCode.InvalidArgument, "hero_id must be a GUID.")
+            );
         }
 
-        ActiveEquipment equipment = await sender.Send(
-            new GetActiveEquipmentQuery(heroId),
-            context.CancellationToken) ?? throw new RpcException(
-                new Status(StatusCode.NotFound, "Hero inventory not found."));
+        ActiveEquipment equipment =
+            await sender.Send(new GetActiveEquipmentQuery(heroId), context.CancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "Hero inventory not found."));
 
         var reply = new ActiveEquipmentReply { HeroId = equipment.HeroId.ToString() };
-        reply.Slots.AddRange(equipment.Slots.Select(slot =>
-        {
-            var result = new Reward.Contracts.V1.ActiveEquipmentSlot
+        reply.Slots.AddRange(
+            equipment.Slots.Select(slot =>
             {
-                SlotId = slot.SlotId.ToString(),
-                SlotName = slot.SlotName
-            };
+                var result = new Reward.Contracts.V1.ActiveEquipmentSlot
+                {
+                    SlotId = slot.SlotId.ToString(),
+                    SlotName = slot.SlotName,
+                };
 
-            if (slot.EquippedItem is not null)
-            {
-                result.EquippedItem = MapEquippedItem(slot.EquippedItem);
-            }
+                if (slot.EquippedItem is not null)
+                {
+                    result.EquippedItem = MapEquippedItem(slot.EquippedItem);
+                }
 
-            return result;
-        }));
+                return result;
+            })
+        );
         return reply;
     }
 
     private static Reward.Contracts.V1.InventoryItem MapItem(
-        Reward.Application.Features.InventoryUseCase.GetHeroInventory.InventoryItem item) => new()
+        Reward.Application.Features.InventoryUseCase.GetHeroInventory.InventoryItem item
+    ) =>
+        new()
         {
             Id = item.Id.ToString(),
             Type = item.Type,
@@ -68,11 +81,12 @@ public sealed class InventoryGrpcService(ISender sender) : RewardInventoryServic
             State = item.State,
             Quantity = item.Quantity,
             IsEquipped = item.IsEquipped,
-            IsReserved = item.IsReserved
+            IsReserved = item.IsReserved,
         };
 
     private static Reward.Contracts.V1.EquippedItem MapEquippedItem(
-        Reward.Application.Features.InventoryUseCase.GetActiveEquipment.EquippedItem item)
+        Reward.Application.Features.InventoryUseCase.GetActiveEquipment.EquippedItem item
+    )
     {
         var result = new Reward.Contracts.V1.EquippedItem
         {
@@ -80,15 +94,17 @@ public sealed class InventoryGrpcService(ISender sender) : RewardInventoryServic
             ItemId = item.ItemId.ToString(),
             Type = item.Type,
             Name = item.Name,
-            Rarity = item.Rarity
+            Rarity = item.Rarity,
         };
-        result.Modifiers.AddRange(item.Modifiers.Select(modifier => new Reward.Contracts.V1.CombatModifier
-        {
-            Name = modifier.Name,
-            Stat = modifier.Stat,
-            Value = (double)modifier.Value,
-            Type = modifier.Type
-        }));
+        result.Modifiers.AddRange(
+            item.Modifiers.Select(modifier => new Reward.Contracts.V1.CombatModifier
+            {
+                Name = modifier.Name,
+                Stat = modifier.Stat,
+                Value = (double)modifier.Value,
+                Type = modifier.Type,
+            })
+        );
         return result;
     }
 }

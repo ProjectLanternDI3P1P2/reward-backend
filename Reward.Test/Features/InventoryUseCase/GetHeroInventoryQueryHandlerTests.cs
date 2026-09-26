@@ -21,9 +21,24 @@ public sealed class GetHeroInventoryQueryHandlerTests
             HeroId = heroId,
             ItemInstances =
             [
-                CreateItemInstance(equippedItemId, "WEAPON", "Obsidian Blade", "Epic", "AVAILABLE", 1, heroId),
-                CreateItemInstance(reservedPotionId, "POTION", "Health Potion", "Common", "RESERVED", 3)
-            ]
+                CreateItemInstance(
+                    equippedItemId,
+                    "WEAPON",
+                    "Obsidian Blade",
+                    "Epic",
+                    "AVAILABLE",
+                    1,
+                    heroId
+                ),
+                CreateItemInstance(
+                    reservedPotionId,
+                    "POTION",
+                    "Health Potion",
+                    "Common",
+                    "RESERVED",
+                    3
+                ),
+            ],
         };
         var repository = new Mock<IInventoryRepository>();
         repository
@@ -34,15 +49,44 @@ public sealed class GetHeroInventoryQueryHandlerTests
         // Act
         HeroInventory? result = await handler.Handle(
             new GetHeroInventoryQuery(heroId),
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         result.Should().NotBeNull();
         result!.HeroId.Should().Be(heroId);
-        result.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(new InventoryItem(
-            equippedItemId, "WEAPON", "Obsidian Blade", "Epic", "AVAILABLE", 1, true, false));
-        result.Consumables.Should().ContainSingle().Which.Should().BeEquivalentTo(new InventoryItem(
-            reservedPotionId, "POTION", "Health Potion", "Common", "RESERVED", 3, false, true));
+        result
+            .Items.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(
+                new InventoryItem(
+                    equippedItemId,
+                    "WEAPON",
+                    "Obsidian Blade",
+                    "Epic",
+                    "AVAILABLE",
+                    1,
+                    true,
+                    false
+                )
+            );
+        result
+            .Consumables.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(
+                new InventoryItem(
+                    reservedPotionId,
+                    "POTION",
+                    "Health Potion",
+                    "Common",
+                    "RESERVED",
+                    3,
+                    false,
+                    true
+                )
+            );
     }
 
     [Fact]
@@ -59,7 +103,8 @@ public sealed class GetHeroInventoryQueryHandlerTests
         // Act
         HeroInventory? result = await handler.Handle(
             new GetHeroInventoryQuery(heroId),
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         result.Should().BeNull();
@@ -72,7 +117,8 @@ public sealed class GetHeroInventoryQueryHandlerTests
         string rarity,
         string status,
         int quantity,
-        Guid? equippedHeroId = null) =>
+        Guid? equippedHeroId = null
+    ) =>
         new()
         {
             Id = id,
@@ -82,10 +128,10 @@ public sealed class GetHeroInventoryQueryHandlerTests
             {
                 Name = name,
                 Category = new Category { Label = category },
-                Rarity = new Rarity { Label = rarity }
+                Rarity = new Rarity { Label = rarity },
             },
             Equipment = equippedHeroId is null
                 ? []
-                : [new Equipment { HeroId = equippedHeroId.Value }]
+                : [new Equipment { HeroId = equippedHeroId.Value }],
         };
 }

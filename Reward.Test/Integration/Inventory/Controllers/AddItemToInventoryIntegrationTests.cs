@@ -23,11 +23,15 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
         HttpResponseMessage response = await Fixture.HttpClient.PostAsJsonAsync(
             $"/api/v1/heroes/{heroId}/inventory/items",
             new AddItemToInventoryRequest(itemId, "reward-1"),
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        AddItemToInventoryResponse? body = await response.Content.ReadFromJsonAsync<AddItemToInventoryResponse>(TestContext.Current.CancellationToken);
+        AddItemToInventoryResponse? body =
+            await response.Content.ReadFromJsonAsync<AddItemToInventoryResponse>(
+                TestContext.Current.CancellationToken
+            );
         body.Should().NotBeNull();
         body!.AlreadyExists.Should().BeFalse();
 
@@ -48,15 +52,27 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
 
         // Act
         HttpResponseMessage firstResponse = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items", request, TestContext.Current.CancellationToken);
+            $"/api/v1/heroes/{heroId}/inventory/items",
+            request,
+            TestContext.Current.CancellationToken
+        );
         HttpResponseMessage retryResponse = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items", request, TestContext.Current.CancellationToken);
+            $"/api/v1/heroes/{heroId}/inventory/items",
+            request,
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         retryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        AddItemToInventoryResponse? firstBody = await firstResponse.Content.ReadFromJsonAsync<AddItemToInventoryResponse>(TestContext.Current.CancellationToken);
-        AddItemToInventoryResponse? retryBody = await retryResponse.Content.ReadFromJsonAsync<AddItemToInventoryResponse>(TestContext.Current.CancellationToken);
+        AddItemToInventoryResponse? firstBody =
+            await firstResponse.Content.ReadFromJsonAsync<AddItemToInventoryResponse>(
+                TestContext.Current.CancellationToken
+            );
+        AddItemToInventoryResponse? retryBody =
+            await retryResponse.Content.ReadFromJsonAsync<AddItemToInventoryResponse>(
+                TestContext.Current.CancellationToken
+            );
         firstBody.Should().NotBeNull();
         retryBody.Should().BeEquivalentTo(firstBody with { AlreadyExists = true });
         int itemInstanceCount = await CountItemInstancesAsync();
@@ -75,7 +91,8 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
         HttpResponseMessage response = await Fixture.HttpClient.PostAsJsonAsync(
             $"/api/v1/heroes/{heroId}/inventory/items",
             new AddItemToInventoryRequest(itemId, "reward-2"),
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -86,10 +103,42 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
     private async Task<Guid> SeedInventoryAndItemAsync(Guid heroId, int itemCapacity = 40)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        var category = new Category { Id = Guid.NewGuid(), Label = "WEAPON", CreatedAt = now, UpdatedAt = now };
-        var rarity = new Rarity { Id = Guid.NewGuid(), Label = "Common", Color = "#FFFFFF", Rank = 1, CreatedAt = now, UpdatedAt = now };
-        var inventory = new InventoryEntity { Id = Guid.NewGuid(), HeroId = heroId, ItemCapacity = itemCapacity, PotionCapacity = 20, CreatedAt = now, UpdatedAt = now };
-        var item = new Item { Id = Guid.NewGuid(), Category = category, Rarity = rarity, Name = "Obsidian Blade", Description = "A blade.", LevelRequired = 1, CreatedAt = now, UpdatedAt = now };
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Label = "WEAPON",
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        var rarity = new Rarity
+        {
+            Id = Guid.NewGuid(),
+            Label = "Common",
+            Color = "#FFFFFF",
+            Rank = 1,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        var inventory = new InventoryEntity
+        {
+            Id = Guid.NewGuid(),
+            HeroId = heroId,
+            ItemCapacity = itemCapacity,
+            PotionCapacity = 20,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        var item = new Item
+        {
+            Id = Guid.NewGuid(),
+            Category = category,
+            Rarity = rarity,
+            Name = "Obsidian Blade",
+            Description = "A blade.",
+            LevelRequired = 1,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
 
         await using AsyncServiceScope scope = Fixture.Services.CreateAsyncScope();
         RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
@@ -102,17 +151,22 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
     {
         await using AsyncServiceScope scope = Fixture.Services.CreateAsyncScope();
         RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
-        InventoryEntity inventory = await dbContext.Inventories.SingleAsync(inventory => inventory.HeroId == heroId, TestContext.Current.CancellationToken);
-        dbContext.ItemInstances.Add(new ItemInstance
-        {
-            Id = Guid.NewGuid(),
-            ItemId = itemId,
-            InventoryId = inventory.Id,
-            Status = "AVAILABLE",
-            Quantity = 1,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
-        });
+        InventoryEntity inventory = await dbContext.Inventories.SingleAsync(
+            inventory => inventory.HeroId == heroId,
+            TestContext.Current.CancellationToken
+        );
+        dbContext.ItemInstances.Add(
+            new ItemInstance
+            {
+                Id = Guid.NewGuid(),
+                ItemId = itemId,
+                InventoryId = inventory.Id,
+                Status = "AVAILABLE",
+                Quantity = 1,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            }
+        );
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
@@ -120,9 +174,12 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
     {
         await using AsyncServiceScope scope = Fixture.Services.CreateAsyncScope();
         RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
-        return await dbContext.ItemInstances
-            .Include(itemInstance => itemInstance.Inventory)
-            .SingleAsync(itemInstance => itemInstance.Id == itemInstanceId, TestContext.Current.CancellationToken);
+        return await dbContext
+            .ItemInstances.Include(itemInstance => itemInstance.Inventory)
+            .SingleAsync(
+                itemInstance => itemInstance.Id == itemInstanceId,
+                TestContext.Current.CancellationToken
+            );
     }
 
     private async Task<int> CountItemInstancesAsync()
@@ -133,5 +190,6 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
     }
 
     private sealed record AddItemToInventoryRequest(Guid ItemId, string IdempotencyKey);
+
     private sealed record AddItemToInventoryResponse(Guid ItemInstanceId, bool AlreadyExists);
 }

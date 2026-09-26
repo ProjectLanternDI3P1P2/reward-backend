@@ -9,9 +9,15 @@ namespace Reward.Presentation.Controllers;
 public sealed class PlaceholderController(ISender sender) : ControllerBase
 {
     [HttpGet("{placeholderId:guid}")]
-    public async Task<IActionResult> GetByIdAsync(Guid placeholderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetByIdAsync(
+        Guid placeholderId,
+        CancellationToken cancellationToken
+    )
     {
-        var placeholder = await sender.Send(new GetPlaceholderByIdQuery(placeholderId), cancellationToken);
+        var placeholder = await sender.Send(
+            new GetPlaceholderByIdQuery(placeholderId),
+            cancellationToken
+        );
         return placeholder is null ? NotFound() : Ok(placeholder);
     }
 }

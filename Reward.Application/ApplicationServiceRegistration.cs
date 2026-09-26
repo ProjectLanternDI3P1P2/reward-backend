@@ -1,6 +1,6 @@
+using System.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 using Reward.Application.PipelineBehavior;
 
 namespace Reward.Application;
@@ -9,8 +9,7 @@ public static class ApplicationServiceRegistration
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        return services.ConfigureMediatR()
-            .ConfigureFluentValidation();
+        return services.ConfigureMediatR().ConfigureFluentValidation();
     }
 
     private static IServiceCollection ConfigureMediatR(this IServiceCollection services)

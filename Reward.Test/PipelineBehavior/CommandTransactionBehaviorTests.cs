@@ -1,10 +1,10 @@
+using FluentAssertions;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Reward.Application.Abstractions;
 using Reward.Domain.Entities;
 using Reward.Infrastructure.Persistence;
 using Reward.Infrastructure.PipelineBehavior;
-using FluentAssertions;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Reward.Test.PipelineBehavior;
 
@@ -25,12 +25,19 @@ public sealed class CommandTransactionBehaviorTests
                 dbContext.Categories.Add(category);
                 return Task.FromResult(Unit.Value);
             },
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken
+        );
 
         result.Should().Be(Unit.Value);
         await using var verificationContext = CreateInMemoryDbContext(databaseName);
-        (await verificationContext.Categories.FindAsync([category.Id], TestContext.Current.CancellationToken))
-            .Should().NotBeNull();
+        (
+            await verificationContext.Categories.FindAsync(
+                [category.Id],
+                TestContext.Current.CancellationToken
+            )
+        )
+            .Should()
+            .NotBeNull();
     }
 
     [Fact]
@@ -41,19 +48,29 @@ public sealed class CommandTransactionBehaviorTests
         var behavior = new CommandTransactionBehavior<CreateCategoryCommand, Unit>(dbContext);
         var category = new Category { Id = Guid.NewGuid(), Label = "Not committed" };
 
-        Func<Task> action = async () => await behavior.Handle(
-            new CreateCategoryCommand(category),
-            _ =>
-            {
-                dbContext.Categories.Add(category);
-                return Task.FromException<Unit>(new InvalidOperationException("Handler failed."));
-            },
-            TestContext.Current.CancellationToken);
+        Func<Task> action = async () =>
+            await behavior.Handle(
+                new CreateCategoryCommand(category),
+                _ =>
+                {
+                    dbContext.Categories.Add(category);
+                    return Task.FromException<Unit>(
+                        new InvalidOperationException("Handler failed.")
+                    );
+                },
+                TestContext.Current.CancellationToken
+            );
 
         await action.Should().ThrowAsync<InvalidOperationException>();
         await using var verificationContext = CreateInMemoryDbContext(databaseName);
-        (await verificationContext.Categories.FindAsync([category.Id], TestContext.Current.CancellationToken))
-            .Should().BeNull();
+        (
+            await verificationContext.Categories.FindAsync(
+                [category.Id],
+                TestContext.Current.CancellationToken
+            )
+        )
+            .Should()
+            .BeNull();
     }
 
     private static RewardDbContext CreateInMemoryDbContext(string? databaseName = null)

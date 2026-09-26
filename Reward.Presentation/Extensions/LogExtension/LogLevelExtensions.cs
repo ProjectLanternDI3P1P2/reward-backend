@@ -14,7 +14,7 @@ public static class LogLevelExtensions
             LogEventLevel.Warning => "warn",
             LogEventLevel.Error => "error",
             LogEventLevel.Fatal => "fatal",
-            _ => level.ToString().ToLowerInvariant()
+            _ => level.ToString().ToLowerInvariant(),
         };
     }
 }

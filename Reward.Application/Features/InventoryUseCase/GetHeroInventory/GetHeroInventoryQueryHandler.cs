@@ -7,7 +7,10 @@ namespace Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 public sealed class GetHeroInventoryQueryHandler(IInventoryRepository repository)
     : IRequestHandler<GetHeroInventoryQuery, HeroInventory?>
 {
-    public async Task<HeroInventory?> Handle(GetHeroInventoryQuery request, CancellationToken cancellationToken)
+    public async Task<HeroInventory?> Handle(
+        GetHeroInventoryQuery request,
+        CancellationToken cancellationToken
+    )
     {
         Inventory? inventory = await repository.GetByHeroIdAsync(request.HeroId, cancellationToken);
         if (inventory is null)
@@ -18,7 +21,11 @@ public sealed class GetHeroInventoryQueryHandler(IInventoryRepository repository
         List<InventoryItem> items = [];
         List<InventoryItem> consumables = [];
 
-        foreach (ItemInstance itemInstance in inventory.ItemInstances.OrderBy(itemInstance => itemInstance.Item.Name).ThenBy(itemInstance => itemInstance.Id))
+        foreach (
+            ItemInstance itemInstance in inventory
+                .ItemInstances.OrderBy(itemInstance => itemInstance.Item.Name)
+                .ThenBy(itemInstance => itemInstance.Id)
+        )
         {
             InventoryItem item = new(
                 itemInstance.Id,
@@ -28,7 +35,8 @@ public sealed class GetHeroInventoryQueryHandler(IInventoryRepository repository
                 itemInstance.Status,
                 itemInstance.Quantity,
                 itemInstance.Equipment.Any(equipment => equipment.HeroId == request.HeroId),
-                string.Equals(itemInstance.Status, "RESERVED", StringComparison.OrdinalIgnoreCase));
+                string.Equals(itemInstance.Status, "RESERVED", StringComparison.OrdinalIgnoreCase)
+            );
 
             if (IsConsumable(itemInstance.Item.Category.Label))
             {
@@ -44,6 +52,6 @@ public sealed class GetHeroInventoryQueryHandler(IInventoryRepository repository
     }
 
     private static bool IsConsumable(string category) =>
-        string.Equals(category, "POTION", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(category, "VIAL", StringComparison.OrdinalIgnoreCase);
+        string.Equals(category, "POTION", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(category, "VIAL", StringComparison.OrdinalIgnoreCase);
 }

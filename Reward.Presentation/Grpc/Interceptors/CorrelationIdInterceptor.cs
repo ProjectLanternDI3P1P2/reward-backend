@@ -12,9 +12,11 @@ public sealed class CorrelationIdInterceptor : Interceptor
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
         TRequest request,
         ServerCallContext context,
-        UnaryServerMethod<TRequest, TResponse> continuation)
+        UnaryServerMethod<TRequest, TResponse> continuation
+    )
     {
-        string correlationId = GetCorrelationId(context.RequestHeaders) ?? Guid.NewGuid().ToString();
+        string correlationId =
+            GetCorrelationId(context.RequestHeaders) ?? Guid.NewGuid().ToString();
         context.ResponseTrailers.Add(CorrelationIdHeader, correlationId);
 
         using (LogContext.PushProperty("CorrelationId", correlationId))

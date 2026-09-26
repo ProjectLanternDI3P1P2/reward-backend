@@ -9,4 +9,5 @@ public sealed record MessageEnvelope(
     int Version,
     DateTimeOffset OccurredAtUtc,
     string Producer,
-    ReadOnlyMemory<byte> Payload);
+    ReadOnlyMemory<byte> Payload
+);

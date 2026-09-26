@@ -14,13 +14,15 @@ public partial class AddNullableItemInstanceIdempotencyKey : Migration
             name: "idempotency_key",
             table: "item_instance",
             type: "text",
-            nullable: true);
+            nullable: true
+        );
 
         migrationBuilder.CreateIndex(
             name: "IX_item_instance_idempotency_key",
             table: "item_instance",
             column: "idempotency_key",
-            unique: true);
+            unique: true
+        );
     }
 
     /// <inheritdoc />
@@ -28,10 +30,9 @@ public partial class AddNullableItemInstanceIdempotencyKey : Migration
     {
         migrationBuilder.DropIndex(
             name: "IX_item_instance_idempotency_key",
-            table: "item_instance");
+            table: "item_instance"
+        );
 
-        migrationBuilder.DropColumn(
-            name: "idempotency_key",
-            table: "item_instance");
+        migrationBuilder.DropColumn(name: "idempotency_key", table: "item_instance");
     }
 }
