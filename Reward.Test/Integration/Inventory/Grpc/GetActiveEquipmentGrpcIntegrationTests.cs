@@ -3,6 +3,7 @@ using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Reward.Contracts.V1;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Infrastructure.Persistence;
 using InventoryEntity = Reward.Domain.Entities.Inventory;
 
@@ -114,7 +115,7 @@ public sealed class GetActiveEquipmentGrpcIntegrationTests(InventoryGrpcFixture 
             Id = Guid.NewGuid(),
             Item = sword,
             Inventory = inventory,
-            Status = "AVAILABLE",
+            Status = ItemInstanceStatus.Available,
             Quantity = 1,
             CreatedAt = now,
             UpdatedAt = now,

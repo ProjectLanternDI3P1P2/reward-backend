@@ -1,3 +1,5 @@
+using Reward.Domain.Enums;
+
 namespace Reward.Domain.Entities;
 
 public sealed class ItemInstance
@@ -5,7 +7,7 @@ public sealed class ItemInstance
     public Guid Id { get; set; }
     public Guid ItemId { get; set; }
     public Guid InventoryId { get; set; }
-    public string Status { get; set; } = string.Empty;
+    public ItemInstanceStatus Status { get; set; }
     public string? IdempotencyKey { get; set; }
     public int Quantity { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using Reward.Application.Features.InventoryUseCase.AddItemToInventory;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -53,7 +54,7 @@ public sealed class AddItemToInventoryCommandHandlerTests
                 {
                     ItemId = itemId,
                     InventoryId = inventory.Id,
-                    Status = "AVAILABLE",
+                    Status = ItemInstanceStatus.Available,
                     Quantity = 1,
                     IdempotencyKey = "reward-1",
                 }

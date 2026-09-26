@@ -1,5 +1,6 @@
 using MediatR;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
 
 namespace Reward.Application.Features.InventoryUseCase.GetHeroInventory;
@@ -32,10 +33,10 @@ public sealed class GetHeroInventoryQueryHandler(IInventoryRepository repository
                 itemInstance.Item.Category.Label,
                 itemInstance.Item.Name,
                 itemInstance.Item.Rarity.Label,
-                itemInstance.Status,
+                itemInstance.Status.ToCode(),
                 itemInstance.Quantity,
                 itemInstance.Equipment.Any(equipment => equipment.HeroId == request.HeroId),
-                string.Equals(itemInstance.Status, "RESERVED", StringComparison.OrdinalIgnoreCase)
+                itemInstance.Status == ItemInstanceStatus.Reserved
             );
 
             if (IsConsumable(itemInstance.Item.Category.Label))
@@ -51,7 +52,7 @@ public sealed class GetHeroInventoryQueryHandler(IInventoryRepository repository
         return new HeroInventory(inventory.HeroId, items, consumables);
     }
 
-    private static bool IsConsumable(string category) =>
-        string.Equals(category, "POTION", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(category, "VIAL", StringComparison.OrdinalIgnoreCase);
+    private static bool IsConsumable(string categoryLabel) =>
+        Enum.TryParse(categoryLabel, ignoreCase: true, out ItemCategory category)
+        && category.IsConsumable();
 }

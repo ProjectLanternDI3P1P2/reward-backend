@@ -1,5 +1,6 @@
 using MediatR;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -54,7 +55,7 @@ public sealed class AddItemToInventoryCommandHandler(IInventoryRepository reposi
             InventoryId = inventory.Id,
             Item = item,
             Inventory = inventory,
-            Status = "AVAILABLE",
+            Status = ItemInstanceStatus.Available,
             Quantity = 1,
             IdempotencyKey = request.IdempotencyKey,
             CreatedAt = now,

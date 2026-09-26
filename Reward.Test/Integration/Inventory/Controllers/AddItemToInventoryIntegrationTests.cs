@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Infrastructure.Persistence;
 using InventoryEntity = Reward.Domain.Entities.Inventory;
 
@@ -38,7 +39,7 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
         ItemInstance itemInstance = await GetItemInstanceAsync(body.ItemInstanceId);
         itemInstance.Inventory.HeroId.Should().Be(heroId);
         itemInstance.ItemId.Should().Be(itemId);
-        itemInstance.Status.Should().Be("AVAILABLE");
+        itemInstance.Status.Should().Be(ItemInstanceStatus.Available);
         itemInstance.IdempotencyKey.Should().Be("reward-1");
     }
 
@@ -161,7 +162,7 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
                 Id = Guid.NewGuid(),
                 ItemId = itemId,
                 InventoryId = inventory.Id,
-                Status = "AVAILABLE",
+                Status = ItemInstanceStatus.Available,
                 Quantity = 1,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow,

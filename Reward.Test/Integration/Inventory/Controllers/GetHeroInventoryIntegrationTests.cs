@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Infrastructure.Persistence;
 using InventoryEntity = Reward.Domain.Entities.Inventory;
 
@@ -144,7 +145,7 @@ public sealed class GetHeroInventoryIntegrationTests(InventoryControllerFixture 
             Id = swordId,
             Item = sword,
             Inventory = inventory,
-            Status = "AVAILABLE",
+            Status = ItemInstanceStatus.Available,
             Quantity = 1,
             CreatedAt = now,
             UpdatedAt = now,
@@ -154,7 +155,7 @@ public sealed class GetHeroInventoryIntegrationTests(InventoryControllerFixture 
             Id = potionId,
             Item = potion,
             Inventory = inventory,
-            Status = "RESERVED",
+            Status = ItemInstanceStatus.Reserved,
             Quantity = 3,
             CreatedAt = now,
             UpdatedAt = now,

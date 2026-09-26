@@ -3,6 +3,7 @@ using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Reward.Contracts.V1;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Infrastructure.Persistence;
 using InventoryEntity = Reward.Domain.Entities.Inventory;
 
@@ -171,7 +172,7 @@ public sealed class GetHeroInventoryGrpcIntegrationTests(InventoryGrpcFixture fi
             Id = swordId,
             Item = sword,
             Inventory = inventory,
-            Status = "AVAILABLE",
+            Status = ItemInstanceStatus.Available,
             Quantity = 1,
             CreatedAt = now,
             UpdatedAt = now,
@@ -181,7 +182,7 @@ public sealed class GetHeroInventoryGrpcIntegrationTests(InventoryGrpcFixture fi
             Id = potionId,
             Item = potion,
             Inventory = inventory,
-            Status = "RESERVED",
+            Status = ItemInstanceStatus.Reserved,
             Quantity = 3,
             CreatedAt = now,
             UpdatedAt = now,

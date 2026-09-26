@@ -1,27 +1,28 @@
 using Bogus;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 
 namespace Reward.Infrastructure.Persistence.Seeding;
 
 public static class RewardFakeDataGenerator
 {
-    private static readonly string[] CategoryLabels =
+    private static readonly ItemCategory[] Categories =
     [
-        "WEAPON",
-        "ARMOR",
-        "SHIELD",
-        "RING",
-        "AMULET",
-        "POTION",
-        "VIAL",
+        ItemCategory.Weapon,
+        ItemCategory.Armor,
+        ItemCategory.Shield,
+        ItemCategory.Ring,
+        ItemCategory.Amulet,
+        ItemCategory.Potion,
+        ItemCategory.Vial,
     ];
 
     public static IReadOnlyList<Category> CreateCategories(DateTimeOffset now) =>
-        CategoryLabels
-            .Select(label => new Category
+        Categories
+            .Select(category => new Category
             {
                 Id = Guid.NewGuid(),
-                Label = label,
+                Label = category.ToCode(),
                 CreatedAt = now,
                 UpdatedAt = now,
             })
@@ -29,11 +30,11 @@ public static class RewardFakeDataGenerator
 
     public static IReadOnlyList<Rarity> CreateRarities(DateTimeOffset now) =>
         [
-            CreateRarity("Common", "#9CA3AF", 1, now),
-            CreateRarity("Uncommon", "#22C55E", 2, now),
-            CreateRarity("Rare", "#3B82F6", 3, now),
-            CreateRarity("Epic", "#A855F7", 4, now),
-            CreateRarity("Legendary", "#F59E0B", 5, now),
+            CreateRarity(ItemRarity.Common, "#9CA3AF", 1, now),
+            CreateRarity(ItemRarity.Uncommon, "#22C55E", 2, now),
+            CreateRarity(ItemRarity.Rare, "#3B82F6", 3, now),
+            CreateRarity(ItemRarity.Epic, "#A855F7", 4, now),
+            CreateRarity(ItemRarity.Legendary, "#F59E0B", 5, now),
         ];
 
     public static IReadOnlyList<EquipmentSlot> CreateEquipmentSlots(DateTimeOffset now) =>
@@ -74,9 +75,11 @@ public static class RewardFakeDataGenerator
             .RuleFor(
                 item => item.Stackable,
                 (_, item) =>
-                    categories.Single(category => category.Id == item.CategoryId).Label
-                        is "POTION"
-                            or "VIAL"
+                    Enum.TryParse(
+                        categories.Single(category => category.Id == item.CategoryId).Label,
+                        ignoreCase: true,
+                        out ItemCategory category
+                    ) && category.IsConsumable()
             )
             .RuleFor(item => item.CreatedAt, _ => now)
             .RuleFor(item => item.UpdatedAt, _ => now)
@@ -89,11 +92,16 @@ public static class RewardFakeDataGenerator
             CreateInventory("33333333-3333-3333-3333-333333333333", now),
         ];
 
-    private static Rarity CreateRarity(string label, string color, int rank, DateTimeOffset now) =>
+    private static Rarity CreateRarity(
+        ItemRarity rarity,
+        string color,
+        int rank,
+        DateTimeOffset now
+    ) =>
         new()
         {
             Id = Guid.NewGuid(),
-            Label = label,
+            Label = rarity.ToString(),
             Color = color,
             Rank = rank,
             CreatedAt = now,
