@@ -7,6 +7,7 @@ option csharp_namespace = "Reward.Contracts.V1";
 // Version 1 of the synchronous, service-to-service inventory read contract.
 service RewardInventoryService {
   rpc GetHeroInventory (GetHeroInventoryRequest) returns (HeroInventoryReply);
+  rpc GetActiveEquipment (GetActiveEquipmentRequest) returns (ActiveEquipmentReply);
 }
 
 message GetHeroInventoryRequest {
@@ -29,4 +30,37 @@ message InventoryItem {
   int32 quantity = 6;
   bool is_equipped = 7;
   bool is_reserved = 8;
+}
+
+message GetActiveEquipmentRequest {
+  string hero_id = 1;
+}
+
+// The current equipment view used by Combat. Every known slot is returned,
+// including slots with no equipped item.
+message ActiveEquipmentReply {
+  string hero_id = 1;
+  repeated ActiveEquipmentSlot slots = 2;
+}
+
+message ActiveEquipmentSlot {
+  string slot_id = 1;
+  string slot_name = 2;
+  EquippedItem equipped_item = 3;
+}
+
+message EquippedItem {
+  string item_instance_id = 1;
+  string item_id = 2;
+  string type = 3;
+  string name = 4;
+  string rarity = 5;
+  repeated CombatModifier modifiers = 6;
+}
+
+message CombatModifier {
+  string name = 1;
+  string stat = 2;
+  double value = 3;
+  string type = 4;
 }
