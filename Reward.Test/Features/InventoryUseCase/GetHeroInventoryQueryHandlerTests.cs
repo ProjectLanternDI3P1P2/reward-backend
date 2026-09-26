@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
 
 namespace Reward.Test.Features.InventoryUseCase;
@@ -26,7 +27,7 @@ public sealed class GetHeroInventoryQueryHandlerTests
                     "WEAPON",
                     "Obsidian Blade",
                     "Epic",
-                    "AVAILABLE",
+                    ItemInstanceStatus.Available,
                     1,
                     heroId
                 ),
@@ -35,7 +36,7 @@ public sealed class GetHeroInventoryQueryHandlerTests
                     "POTION",
                     "Health Potion",
                     "Common",
-                    "RESERVED",
+                    ItemInstanceStatus.Reserved,
                     3
                 ),
             ],
@@ -115,7 +116,7 @@ public sealed class GetHeroInventoryQueryHandlerTests
         string category,
         string name,
         string rarity,
-        string status,
+        ItemInstanceStatus status,
         int quantity,
         Guid? equippedHeroId = null
     ) =>

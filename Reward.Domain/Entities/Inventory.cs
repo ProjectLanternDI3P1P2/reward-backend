@@ -1,3 +1,5 @@
+using Reward.Domain.Enums;
+
 namespace Reward.Domain.Entities;
 
 public sealed class Inventory
@@ -17,17 +19,9 @@ public sealed class Inventory
     {
         ArgumentNullException.ThrowIfNull(itemInstance);
 
-        bool isPotion = string.Equals(
-            itemInstance.Item.Category.Label,
-            "POTION",
-            StringComparison.OrdinalIgnoreCase
-        );
+        bool isPotion = IsPotion(itemInstance.Item.Category.Label);
         int occupiedSlots = ItemInstances.Count(instance =>
-            string.Equals(
-                instance.Item.Category.Label,
-                "POTION",
-                StringComparison.OrdinalIgnoreCase
-            ) == isPotion
+            IsPotion(instance.Item.Category.Label) == isPotion
         );
         int capacity = isPotion
             ? Math.Min(PotionCapacity, MaximumPotionSlots)
@@ -41,4 +35,8 @@ public sealed class Inventory
 
         ItemInstances.Add(itemInstance);
     }
+
+    private static bool IsPotion(string categoryLabel) =>
+        Enum.TryParse(categoryLabel, ignoreCase: true, out ItemCategory category)
+        && category == ItemCategory.Potion;
 }

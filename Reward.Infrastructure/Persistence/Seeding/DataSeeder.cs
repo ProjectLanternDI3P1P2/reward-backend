@@ -1,6 +1,7 @@
 using Bogus;
 using Microsoft.EntityFrameworkCore;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 
 namespace Reward.Infrastructure.Persistence.Seeding;
 
@@ -65,15 +66,21 @@ public static class DataSeeder
         {
             foreach (Item item in faker.Random.Shuffle(items).Take(14))
             {
-                string category = categories.Single(value => value.Id == item.CategoryId).Label;
-                bool consumable = category is "POTION" or "VIAL";
+                string categoryLabel = categories
+                    .Single(value => value.Id == item.CategoryId)
+                    .Label;
+                bool consumable =
+                    Enum.TryParse(categoryLabel, ignoreCase: true, out ItemCategory category)
+                    && category.IsConsumable();
                 instances.Add(
                     new ItemInstance
                     {
                         Id = Guid.NewGuid(),
                         ItemId = item.Id,
                         InventoryId = inventory.Id,
-                        Status = faker.Random.Bool(0.15f) ? "RESERVED" : "AVAILABLE",
+                        Status = faker.Random.Bool(0.15f)
+                            ? ItemInstanceStatus.Reserved
+                            : ItemInstanceStatus.Available,
                         Quantity = consumable ? faker.Random.Int(1, 10) : 1,
                         CreatedAt = now,
                         UpdatedAt = now,
@@ -98,7 +105,8 @@ public static class DataSeeder
         {
             IEnumerable<ItemInstance> available = instances
                 .Where(instance =>
-                    instance.InventoryId == inventory.Id && instance.Status == "AVAILABLE"
+                    instance.InventoryId == inventory.Id
+                    && instance.Status == ItemInstanceStatus.Available
                 )
                 .Take(2);
 
