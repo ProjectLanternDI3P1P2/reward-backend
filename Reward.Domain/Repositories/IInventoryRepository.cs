@@ -25,7 +25,14 @@ public interface IInventoryRepository
         CancellationToken cancellationToken
     );
 
+    Task<ConsumableUse?> GetConsumableUseByIdempotencyKeyAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken
+    );
+
     void AddItemInstance(ItemInstance itemInstance);
+
+    void AddConsumableUse(ConsumableUse consumableUse);
 
     void AddEquipment(Equipment equipment);
 

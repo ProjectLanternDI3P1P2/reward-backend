@@ -73,8 +73,20 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
             cancellationToken
         );
 
+    public Task<ConsumableUse?> GetConsumableUseByIdempotencyKeyAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken
+    ) =>
+        dbContext.ConsumableUses.SingleOrDefaultAsync(
+            consumableUse => consumableUse.IdempotencyKey == idempotencyKey,
+            cancellationToken
+        );
+
     public void AddItemInstance(ItemInstance itemInstance) =>
         dbContext.ItemInstances.Add(itemInstance);
+
+    public void AddConsumableUse(ConsumableUse consumableUse) =>
+        dbContext.ConsumableUses.Add(consumableUse);
 
     public void AddEquipment(Equipment equipment) => dbContext.Equipment.Add(equipment);
 

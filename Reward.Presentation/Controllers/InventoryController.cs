@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Reward.Application.Features.InventoryUseCase.AddItemToInventory;
+using Reward.Application.Features.InventoryUseCase.ConsumeConsumable;
 using Reward.Application.Features.InventoryUseCase.EquipItem;
 using Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 using Reward.Application.Features.InventoryUseCase.RemoveItemFromInventory;
@@ -84,5 +85,21 @@ public sealed class InventoryController(ISender sender) : ControllerBase
         await sender.Send(new UnequipItemCommand(heroId, itemInstanceId), cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpPost("items/{itemInstanceId:guid}/consume")]
+    public async Task<IActionResult> ConsumeAsync(
+        Guid heroId,
+        Guid itemInstanceId,
+        ConsumeConsumableRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        ConsumeConsumableResult result = await sender.Send<ConsumeConsumableResult>(
+            new ConsumeConsumableCommand(heroId, itemInstanceId, request.IdempotencyKey),
+            cancellationToken
+        );
+
+        return Ok(result);
     }
 }

@@ -10,6 +10,7 @@ public class RewardDbContext(DbContextOptions<RewardDbContext> options) : DbCont
     public DbSet<Inventory> Inventories => Set<Inventory>();
     public DbSet<Item> Items => Set<Item>();
     public DbSet<ItemInstance> ItemInstances => Set<ItemInstance>();
+    public DbSet<ConsumableUse> ConsumableUses => Set<ConsumableUse>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ClassTag> ClassTags => Set<ClassTag>();
     public DbSet<Modifier> Modifiers => Set<Modifier>();
