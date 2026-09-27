@@ -12,7 +12,7 @@ using Reward.Infrastructure.Persistence;
 namespace Reward.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardDbContext))]
-    [Migration("20260927231907_AddConsumableUse")]
+    [Migration("20260927233000_AddConsumableUse")]
     partial class AddConsumableUse
     {
         /// <inheritdoc />
@@ -73,6 +73,47 @@ namespace Reward.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("class_tag", (string)null);
+                });
+
+            modelBuilder.Entity("Reward.Domain.Entities.ConsumableUse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("HeroId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hero_id");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<Guid?>("ItemInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_instance_id");
+
+                    b.Property<int>("RemainingQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("remaining_quantity");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("ItemInstanceId");
+
+                    b.ToTable("consumable_use", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_consumable_use_remaining_quantity", "remaining_quantity >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Equipment", b =>
@@ -1254,6 +1295,16 @@ namespace Reward.Infrastructure.Migrations
                     b.HasIndex("WalletId");
 
                     b.ToTable("wallet_ledger_entry", (string)null);
+                });
+
+            modelBuilder.Entity("Reward.Domain.Entities.ConsumableUse", b =>
+                {
+                    b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
+                        .WithMany()
+                        .HasForeignKey("ItemInstanceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ItemInstance");
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Equipment", b =>
