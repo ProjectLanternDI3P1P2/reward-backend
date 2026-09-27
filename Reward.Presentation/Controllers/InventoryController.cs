@@ -4,6 +4,7 @@ using Reward.Application.Features.InventoryUseCase.AddItemToInventory;
 using Reward.Application.Features.InventoryUseCase.EquipItem;
 using Reward.Application.Features.InventoryUseCase.GetHeroInventory;
 using Reward.Application.Features.InventoryUseCase.RemoveItemFromInventory;
+using Reward.Application.Features.InventoryUseCase.UnequipItem;
 using Reward.Presentation.DTO;
 
 namespace Reward.Presentation.Controllers;
@@ -69,6 +70,18 @@ public sealed class InventoryController(ISender sender) : ControllerBase
             new EquipItemCommand(heroId, itemInstanceId, request.SlotId),
             cancellationToken
         );
+
+        return NoContent();
+    }
+
+    [HttpDelete("items/{itemInstanceId:guid}/equipment")]
+    public async Task<IActionResult> UnequipItemAsync(
+        Guid heroId,
+        Guid itemInstanceId,
+        CancellationToken cancellationToken
+    )
+    {
+        await sender.Send(new UnequipItemCommand(heroId, itemInstanceId), cancellationToken);
 
         return NoContent();
     }
