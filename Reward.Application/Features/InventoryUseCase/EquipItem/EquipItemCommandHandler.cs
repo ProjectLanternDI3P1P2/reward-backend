@@ -13,12 +13,6 @@ public sealed class EquipItemCommandHandler(
     IClock clock
 ) : IRequestHandler<EquipItemCommand>
 {
-    private const string RightHand = "RIGHT_HAND";
-    private const string LeftHand = "LEFT_HAND";
-    private const string Body = "BODY";
-    private const string Jewelry1 = "JEWELRY_1";
-    private const string Jewelry2 = "JEWELRY_2";
-
     public async Task Handle(EquipItemCommand request, CancellationToken cancellationToken)
     {
         Inventory inventory =
@@ -51,11 +45,14 @@ public sealed class EquipItemCommandHandler(
         );
         ValidateHeroEligibility(itemInstance.Item, hero);
 
-        IReadOnlyList<string> compatibleSlotNames = GetCompatibleSlotNames(
+        IReadOnlyList<EquipmentSlotName> compatibleSlotNames = GetCompatibleSlotNames(
             itemInstance.Item.Category.Label
         );
         IReadOnlyList<EquipmentSlot> compatibleSlots =
-            await repository.GetEquipmentSlotsByNamesAsync(compatibleSlotNames, cancellationToken);
+            await repository.GetEquipmentSlotsByNamesAsync(
+                compatibleSlotNames.Select(slot => slot.ToCode()).ToList(),
+                cancellationToken
+            );
         if (compatibleSlots.Count != compatibleSlotNames.Count)
         {
             throw new InvalidOperationException("The required equipment slots are not configured.");
@@ -131,14 +128,14 @@ public sealed class EquipItemCommandHandler(
         }
     }
 
-    private static IReadOnlyList<string> GetCompatibleSlotNames(string category) =>
+    private static IReadOnlyList<EquipmentSlotName> GetCompatibleSlotNames(string category) =>
         category.ToUpperInvariant() switch
         {
-            "TWO_HANDED_SWORD" => [RightHand, LeftHand],
-            "SWORD" or "WEAPON" => [RightHand],
-            "SHIELD" => [LeftHand],
-            "ARMOR" => [Body],
-            "RING" or "AMULET" => [Jewelry1, Jewelry2],
+            "TWO_HANDED_SWORD" => [EquipmentSlotName.RightHand, EquipmentSlotName.LeftHand],
+            "SWORD" or "WEAPON" => [EquipmentSlotName.RightHand],
+            "SHIELD" => [EquipmentSlotName.LeftHand],
+            "ARMOR" => [EquipmentSlotName.Body],
+            "RING" or "AMULET" => [EquipmentSlotName.Jewelry1, EquipmentSlotName.Jewelry2],
             _ => throw new InvalidOperationException("This item category cannot be equipped."),
         };
 
