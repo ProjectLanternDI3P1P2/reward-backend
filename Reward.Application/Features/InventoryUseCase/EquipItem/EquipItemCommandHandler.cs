@@ -118,7 +118,7 @@ public sealed class EquipItemCommandHandler(
             throw new InvalidOperationException("The hero level is too low to equip this item.");
         }
 
-        IReadOnlyCollection<string> requiredClasses = item
+        IReadOnlyList<string> requiredClasses = item
             .ClassTags.Select(tag => tag.ClassTag.Label)
             .ToList();
         if (requiredClasses.Count > 0 && !requiredClasses.Any(hero.ClassTags.Contains))

@@ -28,6 +28,7 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
             .Inventories.FromSqlInterpolated(
                 $"SELECT * FROM inventory WHERE hero_id = {heroId} FOR UPDATE"
             )
+            .AsSplitQuery()
             .Include(inventory => inventory.ItemInstances)
                 .ThenInclude(itemInstance => itemInstance.Item)
                     .ThenInclude(item => item.Category)
