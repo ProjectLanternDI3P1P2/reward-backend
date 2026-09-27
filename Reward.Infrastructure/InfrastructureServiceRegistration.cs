@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Reward.Application.Ports;
 using Reward.Domain.Services;
 using Reward.Infrastructure.Grpc;
 using Reward.Infrastructure.Messaging;
@@ -27,6 +28,7 @@ public static class InfrastructureServiceRegistration
         return services
             .AddSingleton(Options.Create(databaseOptions))
             .AddSingleton<IClock, SystemClock>()
+            .AddSingleton<IHeroProfileClient, MockHeroProfileClient>()
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandTransactionBehavior<,>))
             .AddEfConnection()
             .AddRepositories()
