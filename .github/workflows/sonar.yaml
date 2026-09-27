@@ -63,7 +63,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
 
-      # dotnet-sonarscanner and dotnet-coverage are pinned in dotnet-tools.json, so CI
+      # dotnet-sonarscanner and dotnet-coverage are pinned in .config/dotnet-tools.json, so CI
       # and a developer's machine run the same versions.
       - name: Restore .NET tools
         run: dotnet tool restore

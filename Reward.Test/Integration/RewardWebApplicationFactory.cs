@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Reward.Infrastructure.Persistence;
 
 namespace Reward.Test.Integration;
@@ -29,6 +30,10 @@ public sealed class RewardWebApplicationFactory(string connectionString)
         {
             services.RemoveAll<DbContextOptions<RewardDbContext>>();
             services.RemoveAll<RewardDbContext>();
+            services.RemoveAll<IOptions<DatabaseOptions>>();
+            services.AddSingleton<IOptions<DatabaseOptions>>(
+                Options.Create(new DatabaseOptions { DefaultConnection = connectionString })
+            );
             services.AddDbContext<RewardDbContext>(options => options.UseNpgsql(connectionString));
         });
     }
