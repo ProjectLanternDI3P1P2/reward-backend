@@ -45,9 +45,8 @@ public sealed class EquipItemCommandHandler(
         );
         ValidateHeroEligibility(itemInstance.Item, hero);
 
-        IReadOnlyList<EquipmentSlotName> compatibleSlotNames = GetCompatibleSlotNames(
-            itemInstance.Item.Category.Label
-        );
+        ItemCategory category = itemInstance.Item.Category.Label.ToItemCategory();
+        IReadOnlyList<EquipmentSlotName> compatibleSlotNames = GetCompatibleSlotNames(category);
         IReadOnlyList<EquipmentSlot> compatibleSlots =
             await repository.GetEquipmentSlotsByNamesAsync(
                 compatibleSlotNames.Select(slot => slot.ToCode()).ToList(),
@@ -63,7 +62,7 @@ public sealed class EquipItemCommandHandler(
             ?? throw new InvalidOperationException(
                 "The selected slot is not compatible with this item."
             );
-        IReadOnlyList<EquipmentSlot> targetSlots = IsTwoHanded(itemInstance.Item.Category.Label)
+        IReadOnlyList<EquipmentSlot> targetSlots = IsTwoHanded(category)
             ? compatibleSlots
             : [requestedSlot];
 
@@ -128,17 +127,25 @@ public sealed class EquipItemCommandHandler(
         }
     }
 
-    private static IReadOnlyList<EquipmentSlotName> GetCompatibleSlotNames(string category) =>
-        category.ToUpperInvariant() switch
+    private static IReadOnlyList<EquipmentSlotName> GetCompatibleSlotNames(ItemCategory category) =>
+        category switch
         {
-            "TWO_HANDED_SWORD" => [EquipmentSlotName.RightHand, EquipmentSlotName.LeftHand],
-            "SWORD" or "WEAPON" => [EquipmentSlotName.RightHand],
-            "SHIELD" => [EquipmentSlotName.LeftHand],
-            "ARMOR" => [EquipmentSlotName.Body],
-            "RING" or "AMULET" => [EquipmentSlotName.Jewelry1, EquipmentSlotName.Jewelry2],
+            ItemCategory.TwoHandedSword =>
+            [
+                EquipmentSlotName.RightHand,
+                EquipmentSlotName.LeftHand,
+            ],
+            ItemCategory.Sword or ItemCategory.Weapon => [EquipmentSlotName.RightHand],
+            ItemCategory.Shield => [EquipmentSlotName.LeftHand],
+            ItemCategory.Armor => [EquipmentSlotName.Body],
+            ItemCategory.Ring or ItemCategory.Amulet =>
+            [
+                EquipmentSlotName.Jewelry1,
+                EquipmentSlotName.Jewelry2,
+            ],
             _ => throw new InvalidOperationException("This item category cannot be equipped."),
         };
 
-    private static bool IsTwoHanded(string category) =>
-        string.Equals(category, "TWO_HANDED_SWORD", StringComparison.OrdinalIgnoreCase);
+    private static bool IsTwoHanded(ItemCategory category) =>
+        category == ItemCategory.TwoHandedSword;
 }
