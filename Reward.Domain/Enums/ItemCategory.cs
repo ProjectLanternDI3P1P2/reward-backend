@@ -7,6 +7,8 @@ namespace Reward.Domain.Enums;
 public enum ItemCategory
 {
     Weapon,
+    Sword,
+    TwoHandedSword,
     Armor,
     Shield,
     Ring,

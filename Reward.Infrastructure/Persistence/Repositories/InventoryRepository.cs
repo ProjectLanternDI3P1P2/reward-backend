@@ -28,9 +28,14 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
             .Inventories.FromSqlInterpolated(
                 $"SELECT * FROM inventory WHERE hero_id = {heroId} FOR UPDATE"
             )
+            .AsSplitQuery()
             .Include(inventory => inventory.ItemInstances)
                 .ThenInclude(itemInstance => itemInstance.Item)
                     .ThenInclude(item => item.Category)
+            .Include(inventory => inventory.ItemInstances)
+                .ThenInclude(itemInstance => itemInstance.Item)
+                    .ThenInclude(item => item.ClassTags)
+                        .ThenInclude(itemClassTag => itemClassTag.ClassTag)
             .Include(inventory => inventory.ItemInstances)
                 .ThenInclude(itemInstance => itemInstance.Equipment)
             .SingleOrDefaultAsync(cancellationToken);
@@ -39,6 +44,25 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
         dbContext
             .Items.Include(item => item.Category)
             .SingleOrDefaultAsync(item => item.Id == itemId, cancellationToken);
+
+    public async Task<IReadOnlyList<EquipmentSlot>> GetEquipmentSlotsByNamesAsync(
+        IReadOnlyCollection<string> names,
+        CancellationToken cancellationToken
+    ) =>
+        await dbContext
+            .EquipmentSlots.Where(slot => names.Contains(slot.Name))
+            .ToListAsync(cancellationToken);
+
+    public Task<bool> HasActiveMarketplaceListingAsync(
+        Guid itemInstanceId,
+        CancellationToken cancellationToken
+    ) =>
+        dbContext.MarketplaceListings.AnyAsync(
+            listing =>
+                listing.ItemInstanceId == itemInstanceId
+                && (listing.Status == "ACTIVE" || listing.Status == "RESERVED"),
+            cancellationToken
+        );
 
     public Task<ItemInstance?> GetItemInstanceByIdempotencyKeyAsync(
         string idempotencyKey,
@@ -51,6 +75,10 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
 
     public void AddItemInstance(ItemInstance itemInstance) =>
         dbContext.ItemInstances.Add(itemInstance);
+
+    public void AddEquipment(Equipment equipment) => dbContext.Equipment.Add(equipment);
+
+    public void RemoveEquipment(Equipment equipment) => dbContext.Equipment.Remove(equipment);
 
     public void RemoveItemInstance(ItemInstance itemInstance)
     {

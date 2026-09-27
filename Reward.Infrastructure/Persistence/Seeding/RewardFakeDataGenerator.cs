@@ -38,11 +38,18 @@ public static class RewardFakeDataGenerator
         ];
 
     public static IReadOnlyList<EquipmentSlot> CreateEquipmentSlots(DateTimeOffset now) =>
-        new[] { "RIGHT_HAND", "LEFT_HAND", "BODY", "JEWELRY_1", "JEWELRY_2" }
+        new[]
+        {
+            EquipmentSlotName.RightHand,
+            EquipmentSlotName.LeftHand,
+            EquipmentSlotName.Body,
+            EquipmentSlotName.Jewelry1,
+            EquipmentSlotName.Jewelry2,
+        }
             .Select(name => new EquipmentSlot
             {
                 Id = Guid.NewGuid(),
-                Name = name,
+                Name = name.ToCode(),
                 CreatedAt = now,
                 UpdatedAt = now,
             })
