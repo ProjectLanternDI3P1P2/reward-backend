@@ -141,7 +141,10 @@ public sealed class AddItemToInventoryCommandHandlerTests
             );
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action
+            .Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*item capacity of 40*");
         inventory.ItemInstances.Should().HaveCount(Inventory.MaximumItemSlots);
         repository.Verify(
             repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
@@ -163,7 +166,7 @@ public sealed class AddItemToInventoryCommandHandlerTests
         Action action = () => inventory.Receive(CreateItemInstance("POTION"));
 
         // Assert
-        action.Should().Throw<InvalidOperationException>();
+        action.Should().Throw<InvalidOperationException>().WithMessage("*potion capacity of 20*");
         inventory.ItemInstances.Should().HaveCount(Inventory.MaximumPotionSlots);
     }
 
