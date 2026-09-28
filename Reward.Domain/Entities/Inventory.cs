@@ -1,4 +1,5 @@
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 
 namespace Reward.Domain.Entities;
 
@@ -30,13 +31,12 @@ public sealed class Inventory
         if (occupiedSlots >= capacity)
         {
             string slotType = isPotion ? "potion" : "item";
-            throw new InvalidOperationException($"The inventory has no available {slotType} slot.");
+            throw new InventoryCapacityExceededException(slotType, capacity);
         }
 
         ItemInstances.Add(itemInstance);
     }
 
     private static bool IsPotion(string categoryLabel) =>
-        Enum.TryParse(categoryLabel, ignoreCase: true, out ItemCategory category)
-        && category == ItemCategory.Potion;
+        categoryLabel.ToItemCategory() == ItemCategory.Potion;
 }
