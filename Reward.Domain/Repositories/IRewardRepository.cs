@@ -9,5 +9,11 @@ public interface IRewardRepository
 
     Task<RewardSource?> GetSourceByNameAsync(string name, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Serializes operations sharing <paramref name="rewardKey"/> until the current
+    /// transaction ends.
+    /// </summary>
+    Task LockKeyAsync(string rewardKey, CancellationToken cancellationToken);
+
     void Add(RewardEntity reward);
 }

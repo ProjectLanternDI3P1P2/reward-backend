@@ -73,32 +73,8 @@ public sealed class GrantRewardCommandHandler(
                 await inventoryRepository.GetItemByIdAsync(line.ItemId, cancellationToken)
                 ?? throw new KeyNotFoundException($"Item '{line.ItemId}' was not found.");
 
-            var itemInstance = new ItemInstance
-            {
-                Id = Guid.NewGuid(),
-                ItemId = item.Id,
-                InventoryId = inventory.Id,
-                Item = item,
-                Inventory = inventory,
-                Status = ItemInstanceStatus.Available,
-                Quantity = line.Quantity,
-                CreatedAt = now,
-                UpdatedAt = now,
-            };
-            inventory.Receive(itemInstance);
+            ItemInstance itemInstance = reward.CreditItem(inventory, item, line.Quantity, now);
             inventoryRepository.AddItemInstance(itemInstance);
-
-            reward.Items.Add(
-                new RewardItem
-                {
-                    Id = Guid.NewGuid(),
-                    RewardId = reward.Id,
-                    ItemId = item.Id,
-                    ItemInstanceId = itemInstance.Id,
-                    Quantity = line.Quantity,
-                    CreatedAt = now,
-                }
-            );
         }
 
         // The reward and its items are committed in the same transaction, so a persisted

@@ -24,5 +24,14 @@ public sealed class RewardRepository(RewardDbContext dbContext) : IRewardReposit
             cancellationToken
         );
 
+    public async Task LockKeyAsync(string rewardKey, CancellationToken cancellationToken)
+    {
+        // Transaction-scoped advisory lock: released automatically on commit or rollback.
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({rewardKey}, 0))",
+            cancellationToken
+        );
+    }
+
     public void Add(RewardEntity reward) => dbContext.Rewards.Add(reward);
 }
