@@ -11,4 +11,5 @@ public sealed class Reward
     public int XpAmount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public RewardSource RewardSource { get; set; } = null!;
+    public ICollection<RewardItem> Items { get; set; } = new List<RewardItem>();
 }

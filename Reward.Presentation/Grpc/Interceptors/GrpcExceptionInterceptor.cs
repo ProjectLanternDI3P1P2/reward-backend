@@ -1,6 +1,7 @@
 using FluentValidation;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using Reward.Domain.Exceptions;
 using ILogger = Serilog.ILogger;
 
 namespace Reward.Presentation.Grpc.Interceptors;
@@ -27,6 +28,18 @@ public sealed class GrpcExceptionInterceptor(ILogger logger, IHostEnvironment en
         {
             logger.Warning(exception, "gRPC resource not found.");
             throw new RpcException(new Status(StatusCode.NotFound, exception.Message));
+        }
+        catch (LootTableNotFoundException exception)
+        {
+            // Expose the missing exact dungeon context as a stable caller-visible status.
+            logger.Warning(exception, "gRPC loot table not found.");
+            throw new RpcException(new Status(StatusCode.NotFound, exception.Message));
+        }
+        catch (InvalidLootTableException exception)
+        {
+            // Distinguish invalid server loot configuration from malformed caller input.
+            logger.Error(exception, "gRPC loot table configuration is invalid.");
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, exception.Message));
         }
         catch (ValidationException exception)
         {
