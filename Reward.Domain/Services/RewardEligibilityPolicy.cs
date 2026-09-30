@@ -12,15 +12,16 @@ public static class RewardEligibilityPolicy
 {
     public static IReadOnlyList<Guid> GetEligiblePlayerIds(
         IReadOnlyCollection<ActivityParticipant> participants
+    ) => GetEligibleParticipants(participants).Select(participant => participant.PlayerId).ToList();
+
+    public static IReadOnlyList<ActivityParticipant> GetEligibleParticipants(
+        IReadOnlyCollection<ActivityParticipant> participants
     )
     {
         ArgumentNullException.ThrowIfNull(participants);
         EnsureEachPlayerIsRegisteredOnce(participants);
 
-        return participants
-            .Where(participant => IsEligible(participant.Status))
-            .Select(participant => participant.PlayerId)
-            .ToList();
+        return participants.Where(participant => IsEligible(participant.Status)).ToList();
     }
 
     public static bool IsEligible(

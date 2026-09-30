@@ -33,6 +33,7 @@ public static class InfrastructureServiceRegistration
             .AddSingleton<IClock, SystemClock>()
             .AddSingleton<IRandomNumberGenerator, SystemRandomNumberGenerator>()
             .AddSingleton<LootSelectionService>()
+            .AddSingleton<IRandomSource, CryptoRandomSource>()
             .AddSingleton<IHeroProfileClient, MockHeroProfileClient>()
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandTransactionBehavior<,>))
             .AddEfConnection()

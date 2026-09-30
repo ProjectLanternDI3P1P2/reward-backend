@@ -86,6 +86,10 @@ public sealed class GrantRewardCommandHandlerTests
                         && reward.HeroId == heroId
                         && reward.RewardKey == $"MONSTER:{causeId}:{heroId}"
                         && reward.Items.Count == 2
+                        && reward.Items.All(item =>
+                            !string.IsNullOrWhiteSpace(item.ItemNameSnapshot)
+                            && item.ItemRaritySnapshot == "COMMON"
+                        )
                     )
                 ),
             Times.Once
@@ -282,7 +286,9 @@ public sealed class GrantRewardCommandHandlerTests
         new()
         {
             Id = Guid.NewGuid(),
+            Name = category,
             Category = new Category { Label = category },
+            Rarity = new Rarity { Label = "COMMON" },
         };
 
     private sealed class FixedClock : IClock

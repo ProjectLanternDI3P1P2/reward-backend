@@ -48,8 +48,7 @@ public sealed class ChestLootRepository(RewardDbContext dbContext) : IChestLootR
             .LootTables.AsSplitQuery()
             .Include(table => table.RarityRules)
                 .ThenInclude(rule => rule.Entries)
-                    .ThenInclude(entry => entry.Item)
-                        .ThenInclude(item => item.Rarity)
+                    .ThenInclude(entry => entry.Item.Rarity)
             .SingleOrDefaultAsync(
                 table =>
                     table.SourceType == "CHEST"

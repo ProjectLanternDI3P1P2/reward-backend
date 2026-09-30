@@ -8,10 +8,7 @@ public sealed class SystemRandomNumberGenerator : IRandomNumberGenerator
     public long NextInt64(long exclusiveMaximum)
     {
         // Fail clearly if corrupt weights ever produce a non-positive total.
-        if (exclusiveMaximum <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(exclusiveMaximum));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(exclusiveMaximum);
 
         // Random.Shared is thread-safe and adequate for non-cryptographic game loot.
         return Random.Shared.NextInt64(exclusiveMaximum);
