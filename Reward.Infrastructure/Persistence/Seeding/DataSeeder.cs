@@ -16,6 +16,16 @@ public static class DataSeeder
         CancellationToken cancellationToken = default
     )
     {
+        // Seed reward sources independently so older development databases receive the catalogue.
+        if (!await context.RewardSources.AnyAsync(cancellationToken))
+        {
+            await context.RewardSources.AddRangeAsync(
+                RewardFakeDataGenerator.CreateRewardSources(),
+                cancellationToken
+            );
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         // Preserve existing inventory seed data while allowing later seed families to be added.
         if (!await context.Inventories.AnyAsync(cancellationToken))
         {

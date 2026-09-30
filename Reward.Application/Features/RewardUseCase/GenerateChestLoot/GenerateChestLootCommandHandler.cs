@@ -71,11 +71,12 @@ public sealed class GenerateChestLootCommandHandler(
         var reward = new RewardEntity
         {
             Id = Guid.NewGuid(),
+            HeroId = Guid.Empty,
             RunId = request.DungeonRunId,
             RewardSourceId = source.Id,
             RewardSource = source,
-            Type = "CHEST_LOOT",
-            Status = RewardStatus.Completed.ToCode(),
+            Type = RewardType.Item,
+            Status = RewardStatus.Applied,
             RewardKey = $"chest:{request.DungeonRunId:N}:{request.ChestId:N}",
             CreatedAt = now,
         };

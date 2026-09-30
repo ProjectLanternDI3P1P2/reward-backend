@@ -1009,6 +1009,10 @@ namespace Reward.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid>("HeroId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hero_id");
+
                     b.Property<string>("RewardKey")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1037,6 +1041,8 @@ namespace Reward.Infrastructure.Migrations
                         .HasColumnName("xp_amount");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("HeroId");
 
                     b.HasIndex("RewardKey")
                         .IsUnique();
@@ -1765,7 +1771,7 @@ namespace Reward.Infrastructure.Migrations
                     b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
                         .WithMany()
                         .HasForeignKey("ItemInstanceId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Reward.Domain.Entities.Reward", "Reward")
                         .WithMany("Items")

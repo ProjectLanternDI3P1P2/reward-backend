@@ -38,6 +38,7 @@ public sealed class RewardItemConfiguration : IEntityTypeConfiguration<RewardIte
             .HasOne(x => x.ItemInstance)
             .WithMany()
             .HasForeignKey(x => x.ItemInstanceId)
-            .OnDelete(DeleteBehavior.Restrict);
+            // A rewarded stack may later be consumed or removed; the reward keeps its item and quantity.
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
