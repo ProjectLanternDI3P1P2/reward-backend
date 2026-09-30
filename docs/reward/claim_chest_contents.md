@@ -21,9 +21,9 @@
 
 ## Décision principale : pas de table `chest`
 
-Le coffre (sa position, son ouverture dans le donjon, etc.) **appartient à un autre
-microservice**. Ce service ne stocke que **son contenu**, avec les tables de
-récompenses qui existent déjà. **Aucune migration, aucune modification du schéma**
+Le coffre lui-même (son identifiant, sa position, son apparition dans le donjon)
+**appartient au service Donjon**. Ce service gère **son contenu** : il le génère
+(tables de butin) et le stocke dans les tables de récompenses qui existent déjà. **Aucune migration, aucune modification du schéma**
 (vérifié avec `dotnet ef migrations has-pending-model-changes` : aucun changement).
 
 | Concept métier | Représentation dans la base existante |
@@ -42,18 +42,27 @@ Pourquoi `COMPLETED` et pas `APPLIED` (cité dans le MCD) ? Le code possède dé
 l'enum `RewardStatus { Pending, Active, Completed, Failed }`. On la réutilise
 sans la modifier, `Completed.ToCode()` donne `"COMPLETED"`.
 
-### Contrat avec le service qui génère les coffres
+### Répartition des rôles
 
-Pour qu'un coffre soit récupérable ici, le service propriétaire (ou la future
-génération de butin) doit avoir inséré :
+| Qui | Rôle |
+|---|---|
+| Service Donjon | Possède le coffre et fournit son `chestId`. |
+| Ce service, **génération** (autre US, pas encore codée) | Tire le contenu du coffre dans les tables de butin (`loot_table` avec `source_type = CHEST`, `loot_rarity_rule`, `loot_table_entry`) et l'enregistre dans `reward` / `reward_item`. |
+| Ce service, **récupération** (cette US) | Quand le joueur ouvre le coffre, transfère ce contenu dans son inventaire et marque le coffre vide. |
+
+### Convention que la génération devra respecter
+
+La clé `CHEST:{chestId}` est une convention **interne à ce service**. Pour qu'un
+coffre soit récupérable, la génération des récompenses devra enregistrer :
 
 - une `reward` avec `reward_key = 'CHEST:' + chestId` (GUID au format standard
   `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, minuscules), `status = 'PENDING'` ;
 - une `reward_item` par objet contenu (`item_id`, `quantity > 0`,
   `item_instance_id = NULL`).
 
-La génération des récompenses (tables de butin) **n'est pas dans le périmètre** de
-cette US : l'US part d'un coffre qui « contient des récompenses générées ».
+Elle devra réutiliser `Chest.CreateRewardKey(chestId)` pour construire la clé, plutôt
+que de réécrire le format. La génération **n'est pas dans le périmètre** de cette
+US : l'US part d'un coffre qui « contient des récompenses générées ».
 
 ## Endpoint
 
@@ -156,7 +165,7 @@ ChestController.ClaimContentsAsync
 
 - **14 tests unitaires** (domaine + handler + validateur), sans base de données.
 - **5 tests d'intégration HTTP** : chaque test insère d'abord dans sa base jetable
-  la `reward` que l'autre service aurait créée, puis appelle l'endpoint. Cas couverts : succès, second appel sur coffre vide,
+  la `reward` que la génération aurait créée, puis appelle l'endpoint. Cas couverts : succès, second appel sur coffre vide,
   capacité insuffisante (409 + rien modifié), coffre inconnu (404), identifiant
   vide (422).
 - Suite complète au moment de la livraison : **79 tests, 0 échec**.
@@ -171,10 +180,10 @@ touchent jamais aux données de développement.
 
 ## Tester à la main
 
-Ce service **ne crée jamais de coffre ni ses récompenses** : c'est le rôle du
-service propriétaire du coffre. En local, ce service n'est pas là et le seed de
-développement ne crée pas de récompense. Pour tester, on **simule donc à la main**
-ce qu'il aurait enregistré (par exemple depuis DBeaver sur `localhost:5433`, base
+Cette US **ne crée jamais de coffre ni ses récompenses**. Le coffre appartient au
+service Donjon, et la génération du contenu relève d'une autre US qui n'est pas
+encore codée. Le seed de développement ne crée pas de récompense non plus. Pour
+tester, on **simule donc à la main** ce que la génération aurait enregistré (par exemple depuis DBeaver sur `localhost:5433`, base
 `reward`). Ce script sert uniquement aux tests manuels et ne fait pas partie de la
 fonctionnalité. On réutilise un héros et un objet du seed :
 
@@ -183,7 +192,7 @@ fonctionnalité. On réutilise un héros et un objet du seed :
 SELECT hero_id FROM inventory LIMIT 1;
 SELECT id, name, stackable FROM item LIMIT 5;
 
--- 2. Simuler le contenu d'un coffre fourni par l'autre service (remplacer les <...>)
+-- 2. Simuler le contenu généré pour un coffre (remplacer les <...>)
 INSERT INTO reward_source (id, name, description)
 VALUES (gen_random_uuid(), 'CHEST', 'Dungeon chest')
 ON CONFLICT (name) DO NOTHING;
