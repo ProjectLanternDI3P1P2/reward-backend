@@ -29,8 +29,7 @@ public sealed class ChestLootRepository(RewardDbContext dbContext) : IChestLootR
     {
         // Load the entire persisted response graph so replay never consults the current table.
         return dbContext
-            .ChestLootGenerations.Include(generation => generation.Reward)
-                .ThenInclude(reward => reward.Items)
+            .ChestLootGenerations.Include(generation => generation.Reward.Items)
             .SingleOrDefaultAsync(
                 generation =>
                     generation.DungeonRunId == dungeonRunId && generation.ChestId == chestId,

@@ -8,6 +8,29 @@ namespace Reward.Infrastructure.Migrations;
 /// <inheritdoc />
 public partial class AddChestLootGenerationOutbox : Migration
 {
+    // Reuse the strict loot-table context columns without allocating during migration execution.
+    private static readonly string[] LootTableContextColumns =
+    [
+        "source_type",
+        "floor",
+        "difficulty",
+    ];
+
+    // Reuse the chest business key columns that enforce one generation per run and chest.
+    private static readonly string[] ChestGenerationBusinessKeyColumns =
+    [
+        "dungeon_run_id",
+        "chest_id",
+    ];
+
+    // Reuse the pending-outbox lookup columns used by the dispatcher.
+    private static readonly string[] PendingOutboxColumns =
+    [
+        "published_at_utc",
+        "attempts",
+        "occurred_at_utc",
+    ];
+
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
@@ -125,7 +148,7 @@ public partial class AddChestLootGenerationOutbox : Migration
         migrationBuilder.CreateIndex(
             name: "IX_loot_table_source_type_floor_difficulty",
             table: "loot_table",
-            columns: new[] { "source_type", "floor", "difficulty" },
+            columns: LootTableContextColumns,
             unique: true,
             filter: "floor IS NOT NULL"
         );
@@ -145,7 +168,7 @@ public partial class AddChestLootGenerationOutbox : Migration
         migrationBuilder.CreateIndex(
             name: "IX_chest_loot_generation_dungeon_run_id_chest_id",
             table: "chest_loot_generation",
-            columns: new[] { "dungeon_run_id", "chest_id" },
+            columns: ChestGenerationBusinessKeyColumns,
             unique: true
         );
 
@@ -165,7 +188,7 @@ public partial class AddChestLootGenerationOutbox : Migration
         migrationBuilder.CreateIndex(
             name: "IX_outbox_message_published_at_utc_attempts_occurred_at_utc",
             table: "outbox_message",
-            columns: new[] { "published_at_utc", "attempts", "occurred_at_utc" },
+            columns: PendingOutboxColumns,
             filter: "published_at_utc IS NULL"
         );
     }
