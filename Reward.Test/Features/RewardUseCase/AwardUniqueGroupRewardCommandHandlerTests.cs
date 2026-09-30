@@ -18,7 +18,9 @@ public sealed class AwardUniqueGroupRewardCommandHandlerTests
     private readonly Item legendarySword = new()
     {
         Id = Guid.NewGuid(),
+        Name = "Legendary Sword",
         Category = new Category { Label = "WEAPON" },
+        Rarity = new Rarity { Label = "LEGENDARY" },
     };
     private readonly ActivityParticipant first = CreateParticipant(ParticipationStatus.Active);
     private readonly ActivityParticipant left = CreateParticipant(ParticipationStatus.Left);
@@ -88,6 +90,8 @@ public sealed class AwardUniqueGroupRewardCommandHandlerTests
                         reward.HeroId == second.HeroId
                         && reward.Status == RewardStatus.Applied
                         && reward.RewardKey == $"BOSS:{causeId}:UNIQUE:{legendarySword.Id}"
+                        && reward.Items.Single().ItemNameSnapshot == "Legendary Sword"
+                        && reward.Items.Single().ItemRaritySnapshot == "LEGENDARY"
                     )
                 ),
             Times.Once

@@ -14,8 +14,10 @@ using Reward.Infrastructure.Services;
 
 namespace Reward.Infrastructure;
 
+/// <summary>Registers Reward infrastructure adapters and persistence services.</summary>
 public static class InfrastructureServiceRegistration
 {
+    /// <summary>Adds infrastructure services using the supplied application configuration.</summary>
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
         IConfiguration configuration
@@ -25,9 +27,12 @@ public static class InfrastructureServiceRegistration
             configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()
             ?? new DatabaseOptions();
 
+        // Register process-wide stateless services before scoped persistence adapters.
         return services
             .AddSingleton(Options.Create(databaseOptions))
             .AddSingleton<IClock, SystemClock>()
+            .AddSingleton<IRandomNumberGenerator, SystemRandomNumberGenerator>()
+            .AddSingleton<LootSelectionService>()
             .AddSingleton<IRandomSource, CryptoRandomSource>()
             .AddSingleton<IHeroProfileClient, MockHeroProfileClient>()
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandTransactionBehavior<,>))

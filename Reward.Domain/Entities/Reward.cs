@@ -53,6 +53,7 @@ public sealed class Reward
         };
         inventory.Receive(itemInstance);
 
+        // Preserve the display values recorded when this item was awarded.
         Items.Add(
             new RewardItem
             {
@@ -60,6 +61,8 @@ public sealed class Reward
                 RewardId = Id,
                 ItemId = item.Id,
                 ItemInstanceId = itemInstance.Id,
+                ItemNameSnapshot = item.Name,
+                ItemRaritySnapshot = item.Rarity?.Label ?? string.Empty,
                 Quantity = quantity,
                 CreatedAt = now,
             }

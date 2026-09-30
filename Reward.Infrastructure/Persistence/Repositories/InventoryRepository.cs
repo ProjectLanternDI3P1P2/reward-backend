@@ -43,6 +43,7 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
     public Task<Item?> GetItemByIdAsync(Guid itemId, CancellationToken cancellationToken) =>
         dbContext
             .Items.Include(item => item.Category)
+            .Include(item => item.Rarity)
             .SingleOrDefaultAsync(item => item.Id == itemId, cancellationToken);
 
     public async Task<IReadOnlyList<EquipmentSlot>> GetEquipmentSlotsByNamesAsync(

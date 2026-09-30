@@ -5,22 +5,35 @@ using Reward.Application.Messaging;
 
 namespace Reward.Infrastructure.Messaging;
 
+/// <summary>Registers broker adapters and the durable outbox publisher.</summary>
 public static class MessagingServiceRegistration
 {
+    /// <summary>Adds messaging services and starts the worker when RabbitMQ is enabled.</summary>
     public static IServiceCollection AddMessaging(
         this IServiceCollection services,
         IConfiguration configuration
     )
     {
+        // Bind and validate broker settings once during service startup.
         RabbitMqOptions options =
             configuration.GetSection(RabbitMqOptions.SectionName).Get<RabbitMqOptions>()
             ?? new RabbitMqOptions();
         Validate(options);
         services.AddSingleton(Options.Create(options));
+        // Register durable writers independently from whether publishing is currently enabled.
+        services.AddScoped<OutboxDispatcher>();
+        services.AddSingleton<IChestLootLogWriter, ChestLootLogWriter>();
 
-        return options.Enabled
-            ? services.AddSingleton<IMessagePublisher, RabbitMqMessagePublisher>()
-            : services.AddSingleton<IMessagePublisher, NoOpMessagePublisher>();
+        // Preserve pending outbox rows when RabbitMQ is intentionally disabled.
+        if (!options.Enabled)
+        {
+            return services.AddSingleton<IMessagePublisher, NoOpMessagePublisher>();
+        }
+
+        // Start the durable publisher only when a real broker adapter is configured.
+        services.AddSingleton<IMessagePublisher, RabbitMqMessagePublisher>();
+        services.AddHostedService<OutboxPublisherWorker>();
+        return services;
     }
 
     private static void Validate(RabbitMqOptions options)

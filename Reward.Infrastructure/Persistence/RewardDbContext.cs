@@ -26,6 +26,7 @@ public class RewardDbContext(DbContextOptions<RewardDbContext> options) : DbCont
     public DbSet<RewardEntity> Rewards => Set<RewardEntity>();
     public DbSet<RewardItem> RewardItems => Set<RewardItem>();
     public DbSet<RewardSource> RewardSources => Set<RewardSource>();
+    public DbSet<ChestLootGeneration> ChestLootGenerations => Set<ChestLootGeneration>();
     public DbSet<LootTable> LootTables => Set<LootTable>();
     public DbSet<LootRarityRule> LootRarityRules => Set<LootRarityRule>();
     public DbSet<LootTableEntry> LootTableEntries => Set<LootTableEntry>();
@@ -38,6 +39,7 @@ public class RewardDbContext(DbContextOptions<RewardDbContext> options) : DbCont
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<Trade> Trades => Set<Trade>();
     public DbSet<TradeItem> TradeItems => Set<TradeItem>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

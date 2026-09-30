@@ -8,4 +8,5 @@ public sealed class LootRarityRule
     public int Weight { get; set; }
     public LootTable LootTable { get; set; } = null!;
     public Rarity Rarity { get; set; } = null!;
+    public ICollection<LootTableEntry> Entries { get; set; } = new List<LootTableEntry>();
 }
