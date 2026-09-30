@@ -11,8 +11,16 @@ public sealed class RewardEligibilityPolicyTests
     public void GetEligiblePlayerIds_ActiveParticipants_ReturnsAllOfThem()
     {
         // Arrange
-        var first = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Active);
-        var second = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Active);
+        var first = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Active
+        );
+        var second = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Active
+        );
 
         // Act
         IReadOnlyList<Guid> eligiblePlayerIds = RewardEligibilityPolicy.GetEligiblePlayerIds([
@@ -28,7 +36,11 @@ public sealed class RewardEligibilityPolicyTests
     public void IsEligible_PlayerNotRegisteredInActivity_ReturnsFalse()
     {
         // Arrange
-        var participant = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Active);
+        var participant = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Active
+        );
 
         // Act
         bool isEligible = RewardEligibilityPolicy.IsEligible(Guid.NewGuid(), [participant]);
@@ -41,7 +53,11 @@ public sealed class RewardEligibilityPolicyTests
     public void IsEligible_ParticipantDiedBeforeActivityEnded_ReturnsTrue()
     {
         // Arrange
-        var participant = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Dead);
+        var participant = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Dead
+        );
 
         // Act
         bool isEligible = RewardEligibilityPolicy.IsEligible(participant.PlayerId, [participant]);
@@ -54,7 +70,11 @@ public sealed class RewardEligibilityPolicyTests
     public void IsEligible_ParticipantTemporarilyDisconnected_ReturnsTrue()
     {
         // Arrange
-        var participant = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Disconnected);
+        var participant = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Disconnected
+        );
 
         // Act
         bool isEligible = RewardEligibilityPolicy.IsEligible(participant.PlayerId, [participant]);
@@ -67,7 +87,11 @@ public sealed class RewardEligibilityPolicyTests
     public void IsEligible_ParticipantLeftVoluntarily_ReturnsFalse()
     {
         // Arrange
-        var participant = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Left);
+        var participant = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Left
+        );
 
         // Act
         bool isEligible = RewardEligibilityPolicy.IsEligible(participant.PlayerId, [participant]);
@@ -80,13 +104,26 @@ public sealed class RewardEligibilityPolicyTests
     public void GetEligiblePlayerIds_MixedParticipants_ExcludesOnlyPlayersWhoLeft()
     {
         // Arrange
-        var active = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Active);
-        var dead = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Dead);
+        var active = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Active
+        );
+        var dead = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Dead
+        );
         var disconnected = new ActivityParticipant(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             ParticipationStatus.Disconnected
         );
-        var left = new ActivityParticipant(Guid.NewGuid(), ParticipationStatus.Left);
+        var left = new ActivityParticipant(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            ParticipationStatus.Left
+        );
 
         // Act
         IReadOnlyList<Guid> eligiblePlayerIds = RewardEligibilityPolicy.GetEligiblePlayerIds([
@@ -111,8 +148,8 @@ public sealed class RewardEligibilityPolicyTests
         // Act
         Action act = () =>
             RewardEligibilityPolicy.GetEligiblePlayerIds([
-                new ActivityParticipant(playerId, ParticipationStatus.Active),
-                new ActivityParticipant(playerId, ParticipationStatus.Left),
+                new ActivityParticipant(playerId, Guid.NewGuid(), ParticipationStatus.Active),
+                new ActivityParticipant(playerId, Guid.NewGuid(), ParticipationStatus.Left),
             ]);
 
         // Assert

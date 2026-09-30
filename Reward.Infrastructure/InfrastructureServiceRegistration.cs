@@ -28,6 +28,7 @@ public static class InfrastructureServiceRegistration
         return services
             .AddSingleton(Options.Create(databaseOptions))
             .AddSingleton<IClock, SystemClock>()
+            .AddSingleton<IRandomSource, CryptoRandomSource>()
             .AddSingleton<IHeroProfileClient, MockHeroProfileClient>()
             .AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandTransactionBehavior<,>))
             .AddEfConnection()
