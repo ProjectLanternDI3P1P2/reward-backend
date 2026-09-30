@@ -16,12 +16,23 @@ public static class DataSeeder
         CancellationToken cancellationToken = default
     )
     {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        // Checked separately so databases seeded before the catalogue existed receive it too.
+        if (!await context.RewardSources.AnyAsync(cancellationToken))
+        {
+            await context.RewardSources.AddRangeAsync(
+                RewardFakeDataGenerator.CreateRewardSources(),
+                cancellationToken
+            );
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         if (await context.Inventories.AnyAsync(cancellationToken))
         {
             return;
         }
 
-        DateTimeOffset now = DateTimeOffset.UtcNow;
         IReadOnlyList<Category> categories = RewardFakeDataGenerator.CreateCategories(now);
         IReadOnlyList<Rarity> rarities = RewardFakeDataGenerator.CreateRarities(now);
         IReadOnlyList<EquipmentSlot> slots = RewardFakeDataGenerator.CreateEquipmentSlots(now);

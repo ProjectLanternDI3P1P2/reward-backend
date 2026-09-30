@@ -37,6 +37,13 @@ public static class RewardFakeDataGenerator
             CreateRarity(ItemRarity.Legendary, "#F59E0B", 5, now),
         ];
 
+    public static IReadOnlyList<RewardSource> CreateRewardSources() =>
+        [
+            CreateRewardSource(RewardSourceType.Monster, "Standard monster defeated in combat."),
+            CreateRewardSource(RewardSourceType.Boss, "Boss defeated in combat."),
+            CreateRewardSource(RewardSourceType.Chest, "Chest opened in a dungeon."),
+        ];
+
     public static IReadOnlyList<EquipmentSlot> CreateEquipmentSlots(DateTimeOffset now) =>
         new[]
         {
@@ -124,5 +131,13 @@ public static class RewardFakeDataGenerator
             PotionCapacity = 20,
             CreatedAt = now,
             UpdatedAt = now,
+        };
+
+    private static RewardSource CreateRewardSource(RewardSourceType type, string description) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Name = type.ToCode(),
+            Description = description,
         };
 }

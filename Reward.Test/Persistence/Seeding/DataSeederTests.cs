@@ -26,6 +26,9 @@ public sealed class DataSeederTests
             .Be(3);
         (await context.Categories.CountAsync(TestContext.Current.CancellationToken)).Should().Be(7);
         (await context.Rarities.CountAsync(TestContext.Current.CancellationToken)).Should().Be(5);
+        (await context.RewardSources.CountAsync(TestContext.Current.CancellationToken))
+            .Should()
+            .Be(3);
         (await context.Equipment.CountAsync(TestContext.Current.CancellationToken))
             .Should()
             .BeGreaterThan(0);
