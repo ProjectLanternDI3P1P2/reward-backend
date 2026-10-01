@@ -34,6 +34,9 @@ public static class DataSeeder
 
         // Seed chest contexts independently because older development databases already have inventories.
         await SeedChestLootDataAsync(context, cancellationToken);
+
+        // Seed marketplace listings independently so older development databases receive browsable listings.
+        await SeedMarketplaceDataAsync(context, cancellationToken);
     }
 
     private static async Task SeedInventoryDataAsync(
@@ -135,6 +138,43 @@ public static class DataSeeder
         }
 
         // Commit the source and all missing loot table graphs together.
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedMarketplaceDataAsync(
+        RewardDbContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        // Preserve existing marketplace seed data while allowing reproducible development runs.
+        if (await context.MarketplaceListings.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        List<Inventory> inventories = await context
+            .Inventories.OrderBy(inventory => inventory.Id)
+            .ToListAsync(cancellationToken);
+
+        // Only unowned stacks can be listed, matching the active marketplace invariant.
+        List<ItemInstance> availableInstances = await context
+            .ItemInstances.Where(instance => instance.Status == ItemInstanceStatus.Available)
+            .OrderBy(instance => instance.Id)
+            .ToListAsync(cancellationToken);
+
+        if (inventories.Count == 0 || availableInstances.Count == 0)
+        {
+            return;
+        }
+
+        IReadOnlyList<MarketplaceListing> listings =
+            RewardFakeDataGenerator.CreateMarketplaceListings(
+                inventories,
+                availableInstances,
+                DateTimeOffset.UtcNow
+            );
+
+        await context.MarketplaceListings.AddRangeAsync(listings, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
     }
 
