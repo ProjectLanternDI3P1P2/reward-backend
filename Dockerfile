@@ -17,12 +17,23 @@ RUN dotnet publish Reward.Presentation/Reward.Presentation.csproj \
     --output /app/publish \
     --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# Chiseled: Ubuntu Noble base stripped of the shell, package manager and every
+# non-essential OS package. Smaller attack surface and fewer CVEs to patch than
+# the standard Debian-based runtime image. There is no shell to exec into for
+# debugging, which is acceptable since nothing after this point needs one.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS runtime
 WORKDIR /app
 
 EXPOSE 8080 8081
 
-COPY --from=build /app/publish .
+# Disables the .NET diagnostics IPC channel (dotnet-trace/dotnet-dump/dotnet-counters
+# attachment). Nothing in this container should be profiled remotely in production;
+# this removes one more way to interact with the running process from outside it.
+ENV DOTNET_EnableDiagnostics=0
+
+# --chown: the chiseled image's non-root "app" user ($APP_UID) owns its own files
+# instead of inheriting root ownership from the build stage's COPY.
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish .
 
 # Unprivileged "app" user shipped by the aspnet image.
 USER $APP_UID
