@@ -37,6 +37,13 @@ public static class RewardFakeDataGenerator
             CreateRarity(ItemRarity.Legendary, "#F59E0B", 5, now),
         ];
 
+    public static IReadOnlyList<RewardSource> CreateRewardSources() =>
+        [
+            CreateRewardSource(RewardSourceType.Monster, "Standard monster defeated in combat."),
+            CreateRewardSource(RewardSourceType.Boss, "Boss defeated in combat."),
+            CreateRewardSource(RewardSourceType.Chest, "Chest opened in a dungeon."),
+        ];
+
     public static IReadOnlyList<EquipmentSlot> CreateEquipmentSlots(DateTimeOffset now) =>
         new[]
         {
@@ -99,6 +106,77 @@ public static class RewardFakeDataGenerator
             CreateInventory("33333333-3333-3333-3333-333333333333", now),
         ];
 
+    /// <summary>Creates the four reproducible CHEST contexts used during local development.</summary>
+    public static IReadOnlyList<LootTable> CreateChestLootTables(
+        IReadOnlyList<Item> items,
+        DateTimeOffset now
+    )
+    {
+        // Give harder and later contexts more draws while retaining the database default of one.
+        (int Floor, string Difficulty, int DrawCount)[] contexts =
+        [
+            (1, "NORMAL", 2),
+            (1, "HARD", 3),
+            (2, "NORMAL", 3),
+            (2, "HARD", 4),
+        ];
+
+        // Build one complete weighted graph for each exact dungeon context.
+        return contexts
+            .Select(context =>
+            {
+                var table = new LootTable
+                {
+                    Id = Guid.NewGuid(),
+                    Name = $"Chest floor {context.Floor} {context.Difficulty}",
+                    Floor = context.Floor,
+                    Difficulty = context.Difficulty,
+                    SourceType = "CHEST",
+                    DrawCount = context.DrawCount,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                };
+
+                // Give every catalogue rarity a rule backed by up to five concrete items.
+                foreach (IGrouping<Guid, Item> rarityItems in items.GroupBy(item => item.RarityId))
+                {
+                    Item firstItem = rarityItems.First();
+                    var rule = new LootRarityRule
+                    {
+                        Id = Guid.NewGuid(),
+                        LootTableId = table.Id,
+                        LootTable = table,
+                        RarityId = rarityItems.Key,
+                        Rarity = firstItem.Rarity,
+                        Weight = Math.Max(1, 100 / Math.Max(firstItem.Rarity.Rank, 1)),
+                    };
+
+                    // Keep equipment singular while allowing stackable consumables to vary inclusively.
+                    foreach (Item item in rarityItems.Take(5))
+                    {
+                        rule.Entries.Add(
+                            new LootTableEntry
+                            {
+                                Id = Guid.NewGuid(),
+                                LootRarityRuleId = rule.Id,
+                                LootRarityRule = rule,
+                                ItemId = item.Id,
+                                Item = item,
+                                Weight = 1,
+                                MinQuantity = 1,
+                                MaxQuantity = item.Stackable ? 3 : 1,
+                            }
+                        );
+                    }
+
+                    table.RarityRules.Add(rule);
+                }
+
+                return table;
+            })
+            .ToList();
+    }
+
     private static Rarity CreateRarity(
         ItemRarity rarity,
         string color,
@@ -124,5 +202,13 @@ public static class RewardFakeDataGenerator
             PotionCapacity = 20,
             CreatedAt = now,
             UpdatedAt = now,
+        };
+
+    private static RewardSource CreateRewardSource(RewardSourceType type, string description) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Name = type.ToCode(),
+            Description = description,
         };
 }

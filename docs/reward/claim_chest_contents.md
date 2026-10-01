@@ -16,71 +16,57 @@
 | # | Critère | Où c'est garanti | Test qui le prouve |
 |---|---|---|---|
 | 1 | Coffre avec récompenses + capacité suffisante → toutes les récompenses vont dans l'inventaire | `Chest.TransferTo` | `Handle_FilledChestAndEnoughCapacity_TransfersEveryRewardToTheInventory`, `ClaimContents_WhenChestIsFilled_TransfersEveryRewardAndEmptiesTheChest` |
-| 2 | Transfert terminé → le coffre passe à l'état `Empty` | `Chest.TransferTo` passe la `reward` à `COMPLETED` ; `Chest.State` en déduit `Empty` | `TransferTo_NonStackableReward_CreatesOneItemInstancePerUnit`, test d'intégration ci-dessus |
+| 2 | Transfert terminé → le coffre passe à l'état `Empty` | `Chest.TransferTo` renseigne `reward.hero_id` ; `Chest.State` en déduit `Empty` | `TransferTo_NonStackableReward_CreatesOneItemInstancePerUnit`, test d'intégration ci-dessus |
 | 3 | Coffre `Empty` + nouvelle interaction → rien n'est généré ni transféré | `ClaimChestContentsCommandHandler` retourne tout de suite si `State == Empty` | `Handle_EmptyChest_ReturnsEmptyStateWithoutTransferringAnything`, `ClaimContents_WhenChestIsAlreadyEmpty_DoesNotTransferRewardsAgain` |
 
-## Décision principale : pas de table `chest`
+## Décision principale : pas de table `chest`, pas de migration
 
 Le coffre lui-même (son identifiant, sa position, son apparition dans le donjon)
-**appartient au service Donjon**. Ce service gère **son contenu** : il le génère
-(tables de butin) et le stocke dans les tables de récompenses qui existent déjà. **Aucune migration, aucune modification du schéma**
-(vérifié avec `dotnet ef migrations has-pending-model-changes` : aucun changement).
+**appartient au service Donjon**. Ce service gère **son contenu** :
 
-| Concept métier | Représentation dans la base existante |
+1. **Génération** (autre US, déjà mergée dans `dev`) : le service Donjon appelle le
+   gRPC `RewardLootService.GenerateChestLoot` avec `(dungeonRunId, chestId, floor,
+   difficulty)`. `GenerateChestLootCommandHandler` tire le contenu dans les tables de
+   butin et l'enregistre dans `reward` / `reward_item`, avec une ligne
+   `chest_loot_generation` qui relie `(dungeon_run_id, chest_id)` à la `reward`.
+2. **Récupération** (cette US) : quand le joueur ouvre le coffre, le contenu est
+   transféré dans son inventaire.
+
+**Aucune migration, aucune modification du schéma** (vérifié avec
+`dotnet ef migrations has-pending-model-changes` : aucun changement).
+
+| Concept métier | Représentation dans la base |
 |---|---|
-| Le coffre `chestId` | Une ligne `reward` dont `reward_key = 'CHEST:{chestId}'` |
-| Les récompenses du coffre | Les lignes `reward_item` rattachées à cette `reward` |
-| État `Filled` (plein) | `reward.status` différent de `COMPLETED` (ex. `PENDING`, `FAILED`) |
-| État `Empty` (vide) | `reward.status = 'COMPLETED'` |
-| Récompense transférée | `reward_item.item_instance_id` renseigné + nouvelle ligne `item_instance` |
+| Le coffre `(dungeonRunId, chestId)` | Une ligne `chest_loot_generation` |
+| Le contenu du coffre | La `reward` liée (`reward_key = chest:{runId}:{chestId}`) et ses `reward_item` |
+| État `Filled` (plein) | `reward.hero_id` = `00000000-0000-0000-0000-000000000000` (aucun destinataire) |
+| État `Empty` (vide) | `reward.hero_id` = le héros qui a récupéré le contenu |
+| Objet transféré | `reward_item.item_instance_id` renseigné + nouvelle ligne `item_instance` |
 
-Pourquoi `reward_key` ? La colonne est déjà **unique** (`uq_reward_key`) et le MCD
-la décrit comme la clé métier qui empêche d'attribuer deux fois une même
-récompense. Un coffre = une raison métier = une clé.
-
-Pourquoi `COMPLETED` et pas `APPLIED` (cité dans le MCD) ? Le code possède déjà
-l'enum `RewardStatus { Pending, Active, Completed, Failed }`. On la réutilise
-sans la modifier, `Completed.ToCode()` donne `"COMPLETED"`.
-
-### Répartition des rôles
-
-| Qui | Rôle |
-|---|---|
-| Service Donjon | Possède le coffre et fournit son `chestId`. |
-| Ce service, **génération** (autre US, pas encore codée) | Tire le contenu du coffre dans les tables de butin (`loot_table` avec `source_type = CHEST`, `loot_rarity_rule`, `loot_table_entry`) et l'enregistre dans `reward` / `reward_item`. |
-| Ce service, **récupération** (cette US) | Quand le joueur ouvre le coffre, transfère ce contenu dans son inventaire et marque le coffre vide. |
-
-### Convention que la génération devra respecter
-
-La clé `CHEST:{chestId}` est une convention **interne à ce service**. Pour qu'un
-coffre soit récupérable, la génération des récompenses devra enregistrer :
-
-- une `reward` avec `reward_key = 'CHEST:' + chestId` (GUID au format standard
-  `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, minuscules), `status = 'PENDING'` ;
-- une `reward_item` par objet contenu (`item_id`, `quantity > 0`,
-  `item_instance_id = NULL`).
-
-Elle devra réutiliser `Chest.CreateRewardKey(chestId)` pour construire la clé, plutôt
-que de réécrire le format. La génération **n'est pas dans le périmètre** de cette
-US : l'US part d'un coffre qui « contient des récompenses générées ».
+Pourquoi `reward.hero_id` comme marqueur ? La génération crée la récompense **sans
+destinataire** (`hero_id` vide) et directement au statut `APPLIED` ; aucune colonne
+« récupéré » n'existe, et le schéma ne doit pas changer. Le héros qui récupère le
+contenu devient donc le destinataire de la récompense : tant qu'il est vide, le
+coffre est plein. Conséquence : `reward.status = APPLIED` signifie ici « généré »,
+pas « récupéré ».
 
 ## Endpoint
 
 ```http
-POST /api/v1/heroes/{heroId}/chests/{chestId}/claim
+POST /api/v1/heroes/{heroId}/runs/{dungeonRunId}/chests/{chestId}/claim
 ```
 
-Pas de corps de requête. Même style que les routes d'inventaire
-(`/api/v1/heroes/{heroId}/inventory/...`).
+Pas de corps de requête. Le `dungeonRunId` est obligatoire : la génération du butin
+est identifiée par le couple `(run, chest)`, pas par le seul `chestId`.
 
 ### Réponses
 
 | Code | Quand | Corps |
 |---|---|---|
 | `200 OK` | Coffre vidé maintenant **ou** déjà vide | `ClaimChestContentsResult` (voir ci-dessous) |
-| `404 Not Found` | Aucune `reward` pour ce coffre, ou aucun inventaire pour ce héros | ProblemDetails |
+| `404 Not Found` | Aucun butin généré pour ce `(run, chest)`, ou aucun inventaire pour ce héros | ProblemDetails |
 | `409 Conflict` | Capacité d'inventaire insuffisante (`InventoryCapacityExceededException`) | ProblemDetails, ex. *"The inventory has reached its item capacity of 40."* |
-| `422 Unprocessable Entity` | `heroId` ou `chestId` vaut `00000000-0000-0000-0000-000000000000` | ValidationProblemDetails |
+| `422 Unprocessable Entity` | `heroId`, `dungeonRunId` ou `chestId` vaut `00000000-0000-0000-0000-000000000000` | ValidationProblemDetails |
 
 Les codes d'erreur viennent du `ExceptionHandlingMiddleware` existant, qui n'a pas
 été modifié.
@@ -102,7 +88,8 @@ Exemple de réponse, premier appel :
 Deuxième appel sur le même coffre : `"items": []`, `"alreadyEmpty": true`.
 Le deuxième appel ne renvoie **pas** d'erreur : interagir avec un coffre vide
 est un cas normal du jeu (critère 3). Un client peut donc relancer la requête
-sans risque, par exemple après une coupure réseau.
+sans risque, par exemple après une coupure réseau (il ne retrouve alors pas la
+liste des objets, voir les limites).
 
 ## Règles métier
 
@@ -117,34 +104,42 @@ sans risque, par exemple après une coupure réseau.
 4. **Objets non empilables** : une `item_instance` de quantité 1 **par unité**
    (ex. 2 épées → 2 lignes, 2 emplacements), comme l'ajout manuel d'objet.
 5. **Pas de fusion** avec une pile déjà présente dans l'inventaire : le MCD ne fixe
-   pas encore les règles de fusion des piles.
+   pas encore les règles de fusion des piles (même choix que `Reward.CreditItem`).
 6. **Traçabilité.** Chaque `item_instance` créée reçoit
    `idempotency_key = '{reward_key}:{reward_item.id}:{index}'`. L'index unique en
    base empêche donc aussi physiquement un double transfert.
    `reward_item.item_instance_id` pointe vers la (première) instance créée.
-7. **Concurrence.** Le handler verrouille la ligne `reward` (`SELECT … FOR UPDATE`)
-   puis l'inventaire (`GetByHeroIdForUpdateAsync` existant). Deux clics
-   simultanés sont traités l'un après l'autre : le second trouve le coffre déjà
-   `Empty`.
+7. **Concurrence.** Le handler prend d'abord le verrou de génération du coffre
+   (`IChestLootRepository.AcquireGenerationLockAsync`, le même que celui de la
+   génération), puis verrouille l'inventaire (`GetByHeroIdForUpdateAsync` existant).
+   Deux clics simultanés, ou un clic pendant la génération, sont traités l'un après
+   l'autre : le second trouve le coffre déjà `Empty`.
+8. **Premier arrivé, premier servi.** Le premier héros qui récupère le contenu en
+   devient le destinataire ; les suivants reçoivent `alreadyEmpty: true`.
 
-## Fichiers ajoutés
+## Fichiers
 
-Aucun fichier existant n'a été modifié.
+### Ajoutés
 
 | Couche | Fichier | Rôle |
 |---|---|---|
 | Domain | `Reward.Domain/Enums/ChestState.cs` | Enum `Filled` / `Empty` |
-| Domain | `Reward.Domain/Entities/Chest.cs` | Objet métier non persisté. Il enveloppe la `Reward` du coffre, calcule `State`, construit la clé (`CreateRewardKey`) et effectue le transfert (`TransferTo`) |
-| Domain | `Reward.Domain/Repositories/IRewardRepository.cs` | Accès aux récompenses : lecture verrouillée par clé + lignes `reward_item` |
-| Application | `Reward.Application/Features/ChestUseCase/ClaimChestContents/ClaimChestContentsCommand.cs` | Commande CQRS `(HeroId, ChestId)` |
-| Application | `…/ClaimChestContentsCommandHandler.cs` | Orchestration : charger, vérifier l'état, transférer |
+| Domain | `Reward.Domain/Entities/Chest.cs` | Objet métier non persisté. Il enveloppe la `Reward` du coffre, calcule `State` et effectue le transfert (`TransferTo`) |
+| Application | `Reward.Application/Features/ChestUseCase/ClaimChestContents/ClaimChestContentsCommand.cs` | Commande CQRS `(HeroId, DungeonRunId, ChestId)` |
+| Application | `…/ClaimChestContentsCommandHandler.cs` | Orchestration : verrouiller, charger, vérifier l'état, transférer |
 | Application | `…/ClaimChestContentsCommandValidator.cs` | FluentValidation : identifiants non vides |
 | Application | `…/ClaimChestContentsResult.cs` | `ClaimChestContentsResult` + `ClaimedChestItem` |
-| Infrastructure | `Reward.Infrastructure/Persistence/Repositories/RewardRepository.cs` | Implémentation EF Core. Enregistrée automatiquement par Scrutor (suffixe `Repository`) |
 | Presentation | `Reward.Presentation/Controllers/ChestController.cs` | Endpoint REST |
 | Tests | `Reward.Test/Domain/ChestTests.cs` | Règles du domaine (états, empilable ou non, capacité) |
 | Tests | `Reward.Test/Features/ChestUseCase/ClaimChestContentsCommandHandlerTests.cs` | Handler avec mocks Moq + validateur |
 | Tests | `Reward.Test/Integration/Chests/Controllers/*` | Tests HTTP de bout en bout sur PostgreSQL réel, base dédiée `reward_test_chest` réinitialisée par Respawn |
+
+### Existants, étendus sans rien retirer
+
+`IRewardRepository` et `RewardRepository` (créés par la feature de génération du
+butin) reçoivent **une seule méthode ajoutée** : `GetChestRewardAsync(dungeonRunId,
+chestId)`. Elle charge la `reward` du coffre avec ses `reward_item`, leurs objets et
+leurs catégories. Aucune méthode de la génération n'est modifiée.
 
 ### Flux d'un appel
 
@@ -152,23 +147,23 @@ Aucun fichier existant n'a été modifié.
 ChestController.ClaimContentsAsync
   └─ MediatR : ValidationBehavior → LoggingBehavior → CommandTransactionBehavior (BEGIN)
        └─ ClaimChestContentsCommandHandler
-            1. rewardRepository.GetByRewardKeyForUpdateAsync("CHEST:{chestId}")  → 404 si absent
-            2. rewardRepository.GetItemsByRewardIdAsync(reward.Id)
-            3. new Chest(...) ; si State == Empty → 200, alreadyEmpty = true
-            4. inventoryRepository.GetByHeroIdForUpdateAsync(heroId)             → 404 si absent
-            5. chest.TransferTo(inventory, clock.UtcNow)                        → 409 si capacité
+            1. chestLootRepository.AcquireGenerationLockAsync(runId, chestId)
+            2. rewardRepository.GetChestRewardAsync(runId, chestId)           → 404 si absent
+            3. new Chest(chestId, reward) ; si State == Empty → 200, alreadyEmpty = true
+            4. inventoryRepository.GetByHeroIdForUpdateAsync(heroId)          → 404 si absent
+            5. chest.TransferTo(inventory, clock.UtcNow)                      → 409 si capacité
             6. inventoryRepository.AddItemInstance(...) pour chaque instance
   └─ CommandTransactionBehavior : SaveChanges + COMMIT
 ```
 
 ## Tests
 
-- **14 tests unitaires** (domaine + handler + validateur), sans base de données.
-- **5 tests d'intégration HTTP** : chaque test insère d'abord dans sa base jetable
-  la `reward` que la génération aurait créée, puis appelle l'endpoint. Cas couverts : succès, second appel sur coffre vide,
-  capacité insuffisante (409 + rien modifié), coffre inconnu (404), identifiant
-  vide (422).
-- Suite complète au moment de la livraison : **79 tests, 0 échec**.
+- **12 tests unitaires** (domaine + handler + validateur), sans base de données.
+- **5 tests d'intégration HTTP** : chaque test remplit d'abord le coffre avec la
+  **vraie génération du butin** (`GenerateChestLootCommand`), puis appelle
+  l'endpoint. Cas couverts : succès, second appel sur coffre vide, capacité
+  insuffisante (409 + rien modifié), coffre inconnu (404), identifiant vide (422).
+- Suite complète au moment de la livraison : **125 tests, 0 échec**.
 
 ```bash
 docker compose up -d postgres
@@ -180,48 +175,41 @@ touchent jamais aux données de développement.
 
 ## Tester à la main
 
-Cette US **ne crée jamais de coffre ni ses récompenses**. Le coffre appartient au
-service Donjon, et la génération du contenu relève d'une autre US qui n'est pas
-encore codée. Le seed de développement ne crée pas de récompense non plus. Pour
-tester, on **simule donc à la main** ce que la génération aurait enregistré (par exemple depuis DBeaver sur `localhost:5433`, base
-`reward`). Ce script sert uniquement aux tests manuels et ne fait pas partie de la
-fonctionnalité. On réutilise un héros et un objet du seed :
-
-```sql
--- 1. Choisir un héros et un objet existants
-SELECT hero_id FROM inventory LIMIT 1;
-SELECT id, name, stackable FROM item LIMIT 5;
-
--- 2. Simuler le contenu généré pour un coffre (remplacer les <...>)
-INSERT INTO reward_source (id, name, description)
-VALUES (gen_random_uuid(), 'CHEST', 'Dungeon chest')
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO reward (id, run_id, reward_source_id, type, status, reward_key, xp_amount, created_at)
-SELECT gen_random_uuid(), gen_random_uuid(), id, 'ITEM', 'PENDING',
-       'CHEST:11111111-1111-1111-1111-111111111111', 0, now()
-FROM reward_source WHERE name = 'CHEST';
-
-INSERT INTO reward_item (id, reward_id, item_id, item_instance_id, quantity, created_at)
-SELECT gen_random_uuid(), r.id, '<item_id>', NULL, 1, now()
-FROM reward r WHERE r.reward_key = 'CHEST:11111111-1111-1111-1111-111111111111';
-```
-
-Puis, après `docker compose up -d --build` pour embarquer le nouveau code :
+1. Générer le butin d'un coffre avec le gRPC existant (port `8081`, exposé en local
+   uniquement), en choisissant un `floor` et une `difficulty` qui ont une table de
+   butin `CHEST` dans `loot_table` (le seed de développement en crée) :
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/heroes/<hero_id>/chests/11111111-1111-1111-1111-111111111111/claim
+grpcurl -plaintext -import-path Reward.Contracts/Protos -proto reward_chest_loot_v1.proto \
+  -d '{"command_id":"<guid>","dungeon_run_id":"<runId>","chest_id":"<chestId>","floor":1,"difficulty":"NORMAL"}' \
+  localhost:8081 reward.v1.RewardLootService/GenerateChestLoot
+```
+
+2. Récupérer le contenu avec un héros du seed (`SELECT hero_id FROM inventory`) :
+
+```bash
+curl -X POST http://localhost:8080/api/v1/heroes/<heroId>/runs/<runId>/chests/<chestId>/claim
 ```
 
 Relancer la même commande renvoie `alreadyEmpty: true` sans créer de nouvel objet.
+Pour que l'API embarque le nouveau code : `docker compose up -d --build`.
 
 ## Limites connues et pistes pour la suite
 
-- **Propriété du coffre.** `reward.run_id` n'est pas relié localement à un héros.
-  Le service ne peut donc pas vérifier que `heroId` est bien celui qui a trouvé le
-  coffre. Quand l'authentification ou la propagation d'identité (ADR-GLOB-004) et
-  le lien run → héros seront disponibles, il faudra ajouter ce contrôle dans le
-  handler (403 ou 404).
+- **Propriété du coffre.** Rien ne relie une run à un héros dans ce service : tout
+  héros qui connaît `dungeonRunId` et `chestId` peut récupérer le contenu, et le
+  premier arrivé l'emporte. Quand l'authentification ou la propagation d'identité
+  (ADR-GLOB-004) et le lien run → héros seront disponibles, il faudra ajouter ce
+  contrôle dans le handler (403 ou 404).
+- **État du coffre déduit de `reward.hero_id`.** C'est le seul marqueur disponible
+  sans changer le schéma. Une colonne ou un statut dédié (ex. `CLAIMED`) serait plus
+  explicite si une migration devient possible.
+- **Nouvelle tentative après coupure réseau.** Si la réponse du premier appel est
+  perdue, la relance renvoie `alreadyEmpty: true` sans la liste des objets. Le
+  client doit alors relire l'inventaire du héros.
+- **Objet non empilable en plusieurs unités.** `reward_item.item_instance_id` ne
+  référence que la première `item_instance` créée ; les autres sont retrouvables
+  par leur `idempotency_key`.
 - **Inventaire de run.** Le MCD prévoit qu'un butin obtenu *pendant* une run
   alimente `run_item_state` et ne soit validé dans l'inventaire permanent qu'en cas
   de victoire. Aucune fonctionnalité de run n'est encore codée. Comme l'ajout
@@ -229,7 +217,6 @@ Relancer la même commande renvoie `alreadyEmpty: true` sans créer de nouvel ob
   quand les sessions de run seront implémentées : seul `Chest.TransferTo` et le
   handler seraient à adapter.
 - **XP.** `reward.xp_amount` n'est pas traité : l'expérience relève du service
-  héros/progression. Une publication d'événement (`RewardGranted`, voir
-  `IMessagePublisher`) pourra être ajoutée si ce service en a besoin.
+  héros/progression.
 - **gRPC.** L'action vient d'un joueur, donc elle est exposée en REST (ADR 0018).
   Aucun endpoint gRPC n'a été ajouté.

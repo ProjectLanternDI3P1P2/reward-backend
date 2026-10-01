@@ -7,25 +7,49 @@ namespace Reward.Infrastructure.Persistence.Repositories;
 
 public sealed class RewardRepository(RewardDbContext dbContext) : IRewardRepository
 {
-    public Task<RewardEntity?> GetByRewardKeyForUpdateAsync(
+    public Task<RewardEntity?> GetByKeyAsync(
         string rewardKey,
         CancellationToken cancellationToken
     ) =>
         dbContext
-            .Rewards.FromSqlInterpolated(
-                $"SELECT * FROM reward WHERE reward_key = {rewardKey} FOR UPDATE"
-            )
-            .SingleOrDefaultAsync(cancellationToken);
+            .Rewards.Include(reward => reward.Items)
+            .SingleOrDefaultAsync(reward => reward.RewardKey == rewardKey, cancellationToken);
 
-    public async Task<IReadOnlyList<RewardItem>> GetItemsByRewardIdAsync(
-        Guid rewardId,
+    public Task<RewardSource?> GetSourceByNameAsync(
+        string name,
         CancellationToken cancellationToken
     ) =>
-        await dbContext
-            .RewardItems.Include(rewardItem => rewardItem.Item)
-                .ThenInclude(item => item.Category)
-            .Where(rewardItem => rewardItem.RewardId == rewardId)
-            .OrderBy(rewardItem => rewardItem.CreatedAt)
-            .ThenBy(rewardItem => rewardItem.Id)
-            .ToListAsync(cancellationToken);
+        dbContext.RewardSources.SingleOrDefaultAsync(
+            source => source.Name == name,
+            cancellationToken
+        );
+
+    public async Task LockKeyAsync(string rewardKey, CancellationToken cancellationToken)
+    {
+        // Transaction-scoped advisory lock: released automatically on commit or rollback.
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({rewardKey}, 0))",
+            cancellationToken
+        );
+    }
+
+    public void Add(RewardEntity reward) => dbContext.Rewards.Add(reward);
+
+    public Task<RewardEntity?> GetChestRewardAsync(
+        Guid dungeonRunId,
+        Guid chestId,
+        CancellationToken cancellationToken
+    ) =>
+        dbContext
+            .Rewards.Include(reward => reward.Items)
+                .ThenInclude(rewardItem => rewardItem.Item)
+                    .ThenInclude(item => item.Category)
+            .Where(reward =>
+                dbContext.ChestLootGenerations.Any(generation =>
+                    generation.RewardId == reward.Id
+                    && generation.DungeonRunId == dungeonRunId
+                    && generation.ChestId == chestId
+                )
+            )
+            .SingleOrDefaultAsync(cancellationToken);
 }

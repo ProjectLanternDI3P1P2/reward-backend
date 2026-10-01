@@ -47,6 +47,65 @@ namespace Reward.Infrastructure.Migrations
                     b.ToTable("category", (string)null);
                 });
 
+            modelBuilder.Entity("Reward.Domain.Entities.ChestLootGeneration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chest_id");
+
+                    b.Property<Guid>("CommandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("command_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("difficulty");
+
+                    b.Property<Guid>("DungeonRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("dungeon_run_id");
+
+                    b.Property<int>("Floor")
+                        .HasColumnType("integer")
+                        .HasColumnName("floor");
+
+                    b.Property<Guid>("LootTableId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("loot_table_id");
+
+                    b.Property<Guid>("RewardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reward_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LootTableId");
+
+                    b.HasIndex("RewardId")
+                        .IsUnique();
+
+                    b.HasIndex("DungeonRunId", "ChestId")
+                        .IsUnique();
+
+                    b.ToTable("chest_loot_generation", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chest_loot_generation_difficulty_uppercase", "difficulty = upper(difficulty)");
+
+                            t.HasCheckConstraint("ck_chest_loot_generation_floor", "floor > 0");
+                        });
+                });
+
             modelBuilder.Entity("Reward.Domain.Entities.ClassTag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -503,6 +562,16 @@ namespace Reward.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("difficulty");
 
+                    b.Property<int>("DrawCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("draw_count");
+
+                    b.Property<int?>("Floor")
+                        .HasColumnType("integer")
+                        .HasColumnName("floor");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -519,7 +588,16 @@ namespace Reward.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("loot_table", (string)null);
+                    b.HasIndex("SourceType", "Floor", "Difficulty")
+                        .IsUnique()
+                        .HasFilter("floor IS NOT NULL");
+
+                    b.ToTable("loot_table", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_loot_table_draw_count", "draw_count > 0");
+
+                            t.HasCheckConstraint("ck_loot_table_floor", "floor IS NULL OR floor > 0");
+                        });
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.LootTableEntry", b =>
@@ -739,6 +817,71 @@ namespace Reward.Infrastructure.Migrations
                     b.ToTable("modifier", (string)null);
                 });
 
+            modelBuilder.Entity("Reward.Domain.Entities.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("CausationId")
+                        .HasColumnType("text")
+                        .HasColumnName("causation_id");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("correlation_id");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<byte[]>("Payload")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("payload");
+
+                    b.Property<string>("Producer")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("producer");
+
+                    b.Property<DateTimeOffset?>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at_utc");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublishedAtUtc", "Attempts", "OccurredAtUtc")
+                        .HasFilter("published_at_utc IS NULL");
+
+                    b.ToTable("outbox_message", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_outbox_message_attempts", "attempts >= 0");
+
+                            t.HasCheckConstraint("ck_outbox_message_version", "version > 0");
+                        });
+                });
+
             modelBuilder.Entity("Reward.Domain.Entities.OwnershipTransfer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -863,6 +1006,10 @@ namespace Reward.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid>("HeroId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hero_id");
+
                     b.Property<string>("RewardKey")
                         .IsRequired()
                         .HasColumnType("text")
@@ -891,6 +1038,8 @@ namespace Reward.Infrastructure.Migrations
                         .HasColumnName("xp_amount");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("HeroId");
 
                     b.HasIndex("RewardKey")
                         .IsUnique();
@@ -921,6 +1070,16 @@ namespace Reward.Infrastructure.Migrations
                     b.Property<Guid?>("ItemInstanceId")
                         .HasColumnType("uuid")
                         .HasColumnName("item_instance_id");
+
+                    b.Property<string>("ItemNameSnapshot")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("item_name_snapshot");
+
+                    b.Property<string>("ItemRaritySnapshot")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("item_rarity_snapshot");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer")
@@ -1294,6 +1453,25 @@ namespace Reward.Infrastructure.Migrations
                     b.ToTable("wallet_ledger_entry", (string)null);
                 });
 
+            modelBuilder.Entity("Reward.Domain.Entities.ChestLootGeneration", b =>
+                {
+                    b.HasOne("Reward.Domain.Entities.LootTable", "LootTable")
+                        .WithMany()
+                        .HasForeignKey("LootTableId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Reward.Domain.Entities.Reward", "Reward")
+                        .WithOne()
+                        .HasForeignKey("Reward.Domain.Entities.ChestLootGeneration", "RewardId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LootTable");
+
+                    b.Navigation("Reward");
+                });
+
             modelBuilder.Entity("Reward.Domain.Entities.ConsumableUse", b =>
                 {
                     b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
@@ -1459,7 +1637,7 @@ namespace Reward.Infrastructure.Migrations
             modelBuilder.Entity("Reward.Domain.Entities.LootRarityRule", b =>
                 {
                     b.HasOne("Reward.Domain.Entities.LootTable", "LootTable")
-                        .WithMany()
+                        .WithMany("RarityRules")
                         .HasForeignKey("LootTableId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1484,7 +1662,7 @@ namespace Reward.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Reward.Domain.Entities.LootRarityRule", "LootRarityRule")
-                        .WithMany()
+                        .WithMany("Entries")
                         .HasForeignKey("LootRarityRuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1590,10 +1768,10 @@ namespace Reward.Infrastructure.Migrations
                     b.HasOne("Reward.Domain.Entities.ItemInstance", "ItemInstance")
                         .WithMany()
                         .HasForeignKey("ItemInstanceId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Reward.Domain.Entities.Reward", "Reward")
-                        .WithMany()
+                        .WithMany("Items")
                         .HasForeignKey("RewardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1764,12 +1942,27 @@ namespace Reward.Infrastructure.Migrations
                     b.Navigation("Equipment");
                 });
 
+            modelBuilder.Entity("Reward.Domain.Entities.LootRarityRule", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("Reward.Domain.Entities.LootTable", b =>
+                {
+                    b.Navigation("RarityRules");
+                });
+
             modelBuilder.Entity("Reward.Domain.Entities.Modifier", b =>
                 {
                     b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Reward.Domain.Entities.Rarity", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Reward.Domain.Entities.Reward", b =>
                 {
                     b.Navigation("Items");
                 });

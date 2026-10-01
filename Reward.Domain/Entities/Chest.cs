@@ -3,34 +3,27 @@ using Reward.Domain.Enums;
 namespace Reward.Domain.Entities;
 
 /// <summary>
-/// The rewards generated for a dungeon chest. The chest itself belongs to another
-/// microservice; this service only stores its contents as a <see cref="Reward"/>
-/// whose key is derived from the chest identifier.
+/// The rewards generated for a dungeon chest. The chest itself belongs to the Dungeon
+/// microservice; this service generates its contents as a <see cref="Reward"/> and
+/// hands them to the first hero who claims them.
 /// </summary>
 public sealed class Chest
 {
-    private const string RewardKeyPrefix = "CHEST:";
-
     private readonly Reward reward;
-    private readonly IReadOnlyList<RewardItem> rewardItems;
 
-    public Chest(Guid chestId, Reward reward, IReadOnlyList<RewardItem> rewardItems)
+    public Chest(Guid chestId, Reward reward)
     {
         ArgumentNullException.ThrowIfNull(reward);
-        ArgumentNullException.ThrowIfNull(rewardItems);
 
         ChestId = chestId;
         this.reward = reward;
-        this.rewardItems = rewardItems;
     }
 
     public Guid ChestId { get; }
 
-    // A completed reward has already been transferred, so the chest has nothing left.
-    public ChestState State =>
-        reward.Status == RewardStatus.Completed.ToCode() ? ChestState.Empty : ChestState.Filled;
-
-    public static string CreateRewardKey(Guid chestId) => $"{RewardKeyPrefix}{chestId}";
+    // Loot is generated without a recipient; the hero who claims it becomes its owner,
+    // so a chest whose reward already has a hero has nothing left.
+    public ChestState State => reward.HeroId == Guid.Empty ? ChestState.Filled : ChestState.Empty;
 
     /// <summary>
     /// Moves every reward of the chest into the inventory and empties the chest.
@@ -47,7 +40,7 @@ public sealed class Chest
         }
 
         var transferredItems = new List<ItemInstance>();
-        foreach (RewardItem rewardItem in rewardItems)
+        foreach (RewardItem rewardItem in reward.Items)
         {
             IReadOnlyList<ItemInstance> itemInstances = CreateItemInstances(
                 rewardItem,
@@ -64,7 +57,7 @@ public sealed class Chest
             transferredItems.AddRange(itemInstances);
         }
 
-        reward.Status = RewardStatus.Completed.ToCode();
+        reward.HeroId = inventory.HeroId;
         return transferredItems;
     }
 

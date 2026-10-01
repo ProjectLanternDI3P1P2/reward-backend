@@ -23,3 +23,37 @@ message PlaceholderCreated {
   int32 health = 4;
   int32 max_health = 5;
 }
+
+// Immutable business event emitted only when a chest reward is first generated.
+message ChestLootGenerated {
+  string command_id = 1;
+  string reward_id = 2;
+  string dungeon_run_id = 3;
+  string chest_id = 4;
+  string loot_table_id = 5;
+  int32 floor = 6;
+  string difficulty = 7;
+  repeated ChestLootGeneratedItem items = 8;
+}
+
+message ChestLootGeneratedItem {
+  string item_id = 1;
+  string name = 2;
+  string rarity = 3;
+  int32 quantity = 4;
+}
+
+// Structured business log delivered through RabbitMQ for this use case only.
+message ChestLootGenerationLog {
+  string command_id = 1;
+  string reward_id = 2;
+  string dungeon_run_id = 3;
+  string chest_id = 4;
+  string loot_table_id = 5;
+  int32 floor = 6;
+  string difficulty = 7;
+  string outcome = 8;
+  bool already_generated = 9;
+  int32 item_count = 10;
+  string reason = 11;
+}

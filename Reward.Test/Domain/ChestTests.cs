@@ -7,47 +7,41 @@ namespace Reward.Test.Domain;
 
 public sealed class ChestTests
 {
-    private static readonly DateTimeOffset Now = new(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset Now = new(2026, 9, 30, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void CreateRewardKey_ChestId_PrefixesTheIdentifier()
+    public void State_RewardWithoutHero_IsFilled()
     {
         // Arrange
-        var chestId = Guid.Parse("7d1f0d4c-4f8e-4b0a-9f3e-2f1b8c9a6d10");
-
-        // Act
-        string rewardKey = Chest.CreateRewardKey(chestId);
-
-        // Assert
-        rewardKey.Should().Be("CHEST:7d1f0d4c-4f8e-4b0a-9f3e-2f1b8c9a6d10");
-    }
-
-    [Theory]
-    [InlineData(RewardStatus.Pending, ChestState.Filled)]
-    [InlineData(RewardStatus.Failed, ChestState.Filled)]
-    [InlineData(RewardStatus.Completed, ChestState.Empty)]
-    public void State_RewardStatus_ReflectsWhetherRewardsRemain(
-        RewardStatus rewardStatus,
-        ChestState expectedState
-    )
-    {
-        // Arrange
-        var chest = new Chest(Guid.NewGuid(), CreateReward(rewardStatus), []);
+        var chest = new Chest(Guid.NewGuid(), CreateReward(Guid.Empty));
 
         // Act
         ChestState state = chest.State;
 
         // Assert
-        state.Should().Be(expectedState);
+        state.Should().Be(ChestState.Filled);
+    }
+
+    [Fact]
+    public void State_RewardClaimedByAHero_IsEmpty()
+    {
+        // Arrange
+        var chest = new Chest(Guid.NewGuid(), CreateReward(Guid.NewGuid()));
+
+        // Act
+        ChestState state = chest.State;
+
+        // Assert
+        state.Should().Be(ChestState.Empty);
     }
 
     [Fact]
     public void TransferTo_NonStackableReward_CreatesOneItemInstancePerUnit()
     {
         // Arrange
-        RewardEntity reward = CreateReward(RewardStatus.Pending);
-        RewardItem rewardItem = CreateRewardItem(reward, "SWORD", stackable: false, quantity: 2);
-        var chest = new Chest(Guid.NewGuid(), reward, [rewardItem]);
+        RewardEntity reward = CreateReward(Guid.Empty);
+        RewardItem rewardItem = AddRewardItem(reward, "SWORD", stackable: false, quantity: 2);
+        var chest = new Chest(Guid.NewGuid(), reward);
         Inventory inventory = CreateInventory(itemCapacity: 40);
 
         // Act
@@ -64,6 +58,7 @@ public sealed class ChestTests
             );
         inventory.ItemInstances.Should().BeEquivalentTo(itemInstances);
         rewardItem.ItemInstanceId.Should().Be(itemInstances[0].Id);
+        reward.HeroId.Should().Be(inventory.HeroId);
         chest.State.Should().Be(ChestState.Empty);
     }
 
@@ -71,9 +66,9 @@ public sealed class ChestTests
     public void TransferTo_StackableReward_CreatesASingleAvailableStack()
     {
         // Arrange
-        RewardEntity reward = CreateReward(RewardStatus.Pending);
-        RewardItem rewardItem = CreateRewardItem(reward, "POTION", stackable: true, quantity: 5);
-        var chest = new Chest(Guid.NewGuid(), reward, [rewardItem]);
+        RewardEntity reward = CreateReward(Guid.Empty);
+        RewardItem rewardItem = AddRewardItem(reward, "POTION", stackable: true, quantity: 5);
+        var chest = new Chest(Guid.NewGuid(), reward);
         Inventory inventory = CreateInventory(itemCapacity: 40);
 
         // Act
@@ -86,16 +81,16 @@ public sealed class ChestTests
         itemInstance.Status.Should().Be(ItemInstanceStatus.Available);
         itemInstance.Quantity.Should().Be(5);
         itemInstance.CreatedAt.Should().Be(Now);
-        reward.Status.Should().Be("COMPLETED");
     }
 
     [Fact]
     public void TransferTo_EmptyChest_TransfersNothing()
     {
         // Arrange
-        RewardEntity reward = CreateReward(RewardStatus.Completed);
-        RewardItem rewardItem = CreateRewardItem(reward, "SWORD", stackable: false, quantity: 1);
-        var chest = new Chest(Guid.NewGuid(), reward, [rewardItem]);
+        Guid firstHeroId = Guid.NewGuid();
+        RewardEntity reward = CreateReward(firstHeroId);
+        RewardItem rewardItem = AddRewardItem(reward, "SWORD", stackable: false, quantity: 1);
+        var chest = new Chest(Guid.NewGuid(), reward);
         Inventory inventory = CreateInventory(itemCapacity: 40);
 
         // Act
@@ -105,15 +100,16 @@ public sealed class ChestTests
         itemInstances.Should().BeEmpty();
         inventory.ItemInstances.Should().BeEmpty();
         rewardItem.ItemInstanceId.Should().BeNull();
+        reward.HeroId.Should().Be(firstHeroId);
     }
 
     [Fact]
     public void TransferTo_NotEnoughCapacity_ThrowsAndKeepsTheChestFilled()
     {
         // Arrange
-        RewardEntity reward = CreateReward(RewardStatus.Pending);
-        RewardItem rewardItem = CreateRewardItem(reward, "SWORD", stackable: false, quantity: 1);
-        var chest = new Chest(Guid.NewGuid(), reward, [rewardItem]);
+        RewardEntity reward = CreateReward(Guid.Empty);
+        AddRewardItem(reward, "SWORD", stackable: false, quantity: 1);
+        var chest = new Chest(Guid.NewGuid(), reward);
         Inventory inventory = CreateInventory(itemCapacity: 0);
 
         // Act
@@ -124,15 +120,16 @@ public sealed class ChestTests
         chest.State.Should().Be(ChestState.Filled);
     }
 
-    private static RewardEntity CreateReward(RewardStatus status) =>
+    private static RewardEntity CreateReward(Guid heroId) =>
         new()
         {
             Id = Guid.NewGuid(),
-            RewardKey = Chest.CreateRewardKey(Guid.NewGuid()),
-            Status = status.ToCode(),
+            HeroId = heroId,
+            RewardKey = $"chest:{Guid.NewGuid():N}:{Guid.NewGuid():N}",
+            Status = RewardStatus.Applied,
         };
 
-    private static RewardItem CreateRewardItem(
+    private static RewardItem AddRewardItem(
         RewardEntity reward,
         string category,
         bool stackable,
@@ -140,7 +137,7 @@ public sealed class ChestTests
     )
     {
         Guid itemId = Guid.NewGuid();
-        return new RewardItem
+        var rewardItem = new RewardItem
         {
             Id = Guid.NewGuid(),
             RewardId = reward.Id,
@@ -154,6 +151,8 @@ public sealed class ChestTests
             },
             Quantity = quantity,
         };
+        reward.Items.Add(rewardItem);
+        return rewardItem;
     }
 
     private static Inventory CreateInventory(int itemCapacity) =>

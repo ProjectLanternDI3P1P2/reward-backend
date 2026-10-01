@@ -8,6 +8,7 @@ public sealed class ClaimChestContentsCommandValidator
     public ClaimChestContentsCommandValidator()
     {
         RuleFor(command => command.HeroId).NotEmpty();
+        RuleFor(command => command.DungeonRunId).NotEmpty();
         RuleFor(command => command.ChestId).NotEmpty();
     }
 }

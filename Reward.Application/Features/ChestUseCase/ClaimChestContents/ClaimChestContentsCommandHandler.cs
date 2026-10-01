@@ -8,6 +8,7 @@ using RewardEntity = Reward.Domain.Entities.Reward;
 namespace Reward.Application.Features.ChestUseCase.ClaimChestContents;
 
 public sealed class ClaimChestContentsCommandHandler(
+    IChestLootRepository chestLootRepository,
     IRewardRepository rewardRepository,
     IInventoryRepository inventoryRepository,
     IClock clock
@@ -18,19 +19,25 @@ public sealed class ClaimChestContentsCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        // Locking the reward first serializes concurrent claims of the same chest:
-        // the second one waits, then sees the chest already empty.
-        RewardEntity reward =
-            await rewardRepository.GetByRewardKeyForUpdateAsync(
-                Chest.CreateRewardKey(request.ChestId),
-                cancellationToken
-            ) ?? throw new KeyNotFoundException($"Chest '{request.ChestId}' was not found.");
-
-        IReadOnlyList<RewardItem> rewardItems = await rewardRepository.GetItemsByRewardIdAsync(
-            reward.Id,
+        // Reusing the generation lock serializes concurrent claims of the same chest,
+        // and a claim with a generation still in progress: the second caller waits,
+        // then sees the chest already empty.
+        await chestLootRepository.AcquireGenerationLockAsync(
+            request.DungeonRunId,
+            request.ChestId,
             cancellationToken
         );
-        var chest = new Chest(request.ChestId, reward, rewardItems);
+
+        RewardEntity reward =
+            await rewardRepository.GetChestRewardAsync(
+                request.DungeonRunId,
+                request.ChestId,
+                cancellationToken
+            )
+            ?? throw new KeyNotFoundException(
+                $"Chest '{request.ChestId}' of run '{request.DungeonRunId}' was not found."
+            );
+        var chest = new Chest(request.ChestId, reward);
 
         if (chest.State == ChestState.Empty)
         {
