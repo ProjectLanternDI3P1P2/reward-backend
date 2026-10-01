@@ -11,21 +11,21 @@ namespace Reward.Test.Features.ChestUseCase;
 
 public sealed class ClaimChestContentsCommandHandlerTests
 {
+    private static readonly DateTimeOffset Now = new(2026, 10, 1, 12, 0, 0, TimeSpan.Zero);
+
     private readonly Guid heroId = Guid.NewGuid();
     private readonly Guid dungeonRunId = Guid.NewGuid();
     private readonly Guid chestId = Guid.NewGuid();
     private readonly Mock<IChestLootRepository> chestLootRepository = new();
-    private readonly Mock<IRewardRepository> rewardRepository = new();
     private readonly Mock<IInventoryRepository> inventoryRepository = new();
 
     [Fact]
     public async Task Handle_FilledChestAndEnoughCapacity_TransfersEveryRewardToTheInventory()
     {
         // Arrange
-        RewardEntity reward = CreateReward(Guid.Empty);
+        RewardEntity reward = SetupChest(Guid.Empty);
         RewardItem sword = AddRewardItem(reward, "SWORD", stackable: false, quantity: 1);
         RewardItem potion = AddRewardItem(reward, "POTION", stackable: true, quantity: 3);
-        SetupReward(reward);
         Inventory inventory = SetupInventory(itemCapacity: 40);
 
         // Act
@@ -64,12 +64,57 @@ public sealed class ClaimChestContentsCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NonStackableReward_CreatesOneItemInstancePerUnit()
+    {
+        // Arrange
+        RewardEntity reward = SetupChest(Guid.Empty);
+        RewardItem rewardItem = AddRewardItem(reward, "SWORD", stackable: false, quantity: 2);
+        Inventory inventory = SetupInventory(itemCapacity: 40);
+
+        // Act
+        ClaimChestContentsResult result = await CreateHandler()
+            .Handle(CreateCommand(), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Items.Should().HaveCount(2).And.OnlyContain(item => item.Quantity == 1);
+        inventory
+            .ItemInstances.Select(instance => instance.IdempotencyKey)
+            .Should()
+            .Equal(
+                $"{reward.RewardKey}:{rewardItem.Id}:0",
+                $"{reward.RewardKey}:{rewardItem.Id}:1"
+            );
+        rewardItem.ItemInstanceId.Should().Be(result.Items[0].ItemInstanceId);
+    }
+
+    [Fact]
+    public async Task Handle_StackableReward_CreatesASingleAvailableStack()
+    {
+        // Arrange
+        RewardEntity reward = SetupChest(Guid.Empty);
+        RewardItem rewardItem = AddRewardItem(reward, "POTION", stackable: true, quantity: 5);
+        Inventory inventory = SetupInventory(itemCapacity: 40);
+
+        // Act
+        ClaimChestContentsResult result = await CreateHandler()
+            .Handle(CreateCommand(), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Items.Should().ContainSingle().Which.Quantity.Should().Be(5);
+        ItemInstance itemInstance = inventory.ItemInstances.Should().ContainSingle().Subject;
+        itemInstance.ItemId.Should().Be(rewardItem.ItemId);
+        itemInstance.InventoryId.Should().Be(inventory.Id);
+        itemInstance.Status.Should().Be(ItemInstanceStatus.Available);
+        itemInstance.CreatedAt.Should().Be(Now);
+    }
+
+    [Fact]
     public async Task Handle_EmptyChest_ReturnsEmptyStateWithoutTransferringAnything()
     {
         // Arrange
-        RewardEntity reward = CreateReward(Guid.NewGuid());
+        Guid firstHeroId = Guid.NewGuid();
+        RewardEntity reward = SetupChest(firstHeroId);
         AddRewardItem(reward, "SWORD", stackable: false, quantity: 1);
-        SetupReward(reward);
 
         // Act
         ClaimChestContentsResult result = await CreateHandler()
@@ -80,6 +125,7 @@ public sealed class ClaimChestContentsCommandHandlerTests
         result.State.Should().Be("EMPTY");
         result.Items.Should().BeEmpty();
         result.AlreadyEmpty.Should().BeTrue();
+        reward.HeroId.Should().Be(firstHeroId);
         inventoryRepository.Verify(
             repository =>
                 repository.GetByHeroIdForUpdateAsync(
@@ -98,15 +144,15 @@ public sealed class ClaimChestContentsCommandHandlerTests
     public async Task Handle_UnknownChest_ThrowsNotFound()
     {
         // Arrange
-        rewardRepository
+        chestLootRepository
             .Setup(repository =>
-                repository.GetChestRewardAsync(
+                repository.GetGenerationAsync(
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync((RewardEntity?)null);
+            .ReturnsAsync((ChestLootGeneration?)null);
 
         // Act
         Func<Task> action = () =>
@@ -120,9 +166,8 @@ public sealed class ClaimChestContentsCommandHandlerTests
     public async Task Handle_UnknownInventory_ThrowsNotFoundAndKeepsTheChestFilled()
     {
         // Arrange
-        RewardEntity reward = CreateReward(Guid.Empty);
+        RewardEntity reward = SetupChest(Guid.Empty);
         AddRewardItem(reward, "SWORD", stackable: false, quantity: 1);
-        SetupReward(reward);
         inventoryRepository
             .Setup(repository =>
                 repository.GetByHeroIdForUpdateAsync(heroId, It.IsAny<CancellationToken>())
@@ -139,12 +184,33 @@ public sealed class ClaimChestContentsCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_UnknownItem_ThrowsNotFoundAndKeepsTheChestFilled()
+    {
+        // Arrange
+        RewardEntity reward = SetupChest(Guid.Empty);
+        RewardItem rewardItem = AddRewardItem(reward, "SWORD", stackable: false, quantity: 1);
+        SetupInventory(itemCapacity: 40);
+        inventoryRepository
+            .Setup(repository =>
+                repository.GetItemByIdAsync(rewardItem.ItemId, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync((Item?)null);
+
+        // Act
+        Func<Task> action = () =>
+            CreateHandler().Handle(CreateCommand(), TestContext.Current.CancellationToken);
+
+        // Assert
+        await action.Should().ThrowAsync<KeyNotFoundException>().WithMessage("Item '*");
+        reward.HeroId.Should().Be(Guid.Empty);
+    }
+
+    [Fact]
     public async Task Handle_NotEnoughCapacity_ThrowsWithoutAddingAnyItem()
     {
         // Arrange
-        RewardEntity reward = CreateReward(Guid.Empty);
+        RewardEntity reward = SetupChest(Guid.Empty);
         AddRewardItem(reward, "SWORD", stackable: false, quantity: 2);
-        SetupReward(reward);
         SetupInventory(itemCapacity: 1);
 
         // Act
@@ -186,21 +252,36 @@ public sealed class ClaimChestContentsCommandHandlerTests
     }
 
     private ClaimChestContentsCommandHandler CreateHandler() =>
-        new(
-            chestLootRepository.Object,
-            rewardRepository.Object,
-            inventoryRepository.Object,
-            new FixedClock()
-        );
+        new(chestLootRepository.Object, inventoryRepository.Object, new FixedClock());
 
     private ClaimChestContentsCommand CreateCommand() => new(heroId, dungeonRunId, chestId);
 
-    private void SetupReward(RewardEntity reward) =>
-        rewardRepository
+    // Registers the generated chest loot; a reward with a hero is a chest already claimed.
+    private RewardEntity SetupChest(Guid rewardHeroId)
+    {
+        var reward = new RewardEntity
+        {
+            Id = Guid.NewGuid(),
+            HeroId = rewardHeroId,
+            RunId = dungeonRunId,
+            RewardKey = $"chest:{dungeonRunId:N}:{chestId:N}",
+            Status = RewardStatus.Applied,
+        };
+        var generation = new ChestLootGeneration
+        {
+            Id = Guid.NewGuid(),
+            DungeonRunId = dungeonRunId,
+            ChestId = chestId,
+            RewardId = reward.Id,
+            Reward = reward,
+        };
+        chestLootRepository
             .Setup(repository =>
-                repository.GetChestRewardAsync(dungeonRunId, chestId, It.IsAny<CancellationToken>())
+                repository.GetGenerationAsync(dungeonRunId, chestId, It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync(reward);
+            .ReturnsAsync(generation);
+        return reward;
+    }
 
     private Inventory SetupInventory(int itemCapacity)
     {
@@ -219,44 +300,39 @@ public sealed class ClaimChestContentsCommandHandlerTests
         return inventory;
     }
 
-    private RewardEntity CreateReward(Guid rewardHeroId) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            HeroId = rewardHeroId,
-            RunId = dungeonRunId,
-            RewardKey = $"chest:{dungeonRunId:N}:{chestId:N}",
-            Status = RewardStatus.Applied,
-        };
-
-    private static RewardItem AddRewardItem(
+    private RewardItem AddRewardItem(
         RewardEntity reward,
         string category,
         bool stackable,
         int quantity
     )
     {
-        Guid itemId = Guid.NewGuid();
+        var item = new Item
+        {
+            Id = Guid.NewGuid(),
+            Stackable = stackable,
+            Category = new Category { Label = category },
+        };
         var rewardItem = new RewardItem
         {
             Id = Guid.NewGuid(),
             RewardId = reward.Id,
             Reward = reward,
-            ItemId = itemId,
-            Item = new Item
-            {
-                Id = itemId,
-                Stackable = stackable,
-                Category = new Category { Label = category },
-            },
+            ItemId = item.Id,
+            Item = item,
             Quantity = quantity,
         };
         reward.Items.Add(rewardItem);
+        inventoryRepository
+            .Setup(repository =>
+                repository.GetItemByIdAsync(item.Id, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(item);
         return rewardItem;
     }
 
     private sealed class FixedClock : IClock
     {
-        public DateTimeOffset UtcNow { get; } = new(2026, 9, 30, 12, 0, 0, TimeSpan.Zero);
+        public DateTimeOffset UtcNow { get; } = Now;
     }
 }

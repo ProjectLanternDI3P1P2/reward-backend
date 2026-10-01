@@ -7,5 +7,10 @@ public abstract class ChestControllerTestBase(ChestControllerFixture fixture) : 
 
     public ValueTask InitializeAsync() => new(Fixture.ResetAsync());
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        // A derived test class may add a finalizer later, so the base class suppresses it.
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
+    }
 }

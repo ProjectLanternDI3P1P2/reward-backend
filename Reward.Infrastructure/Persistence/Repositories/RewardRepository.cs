@@ -34,22 +34,4 @@ public sealed class RewardRepository(RewardDbContext dbContext) : IRewardReposit
     }
 
     public void Add(RewardEntity reward) => dbContext.Rewards.Add(reward);
-
-    public Task<RewardEntity?> GetChestRewardAsync(
-        Guid dungeonRunId,
-        Guid chestId,
-        CancellationToken cancellationToken
-    ) =>
-        dbContext
-            .Rewards.Include(reward => reward.Items)
-                .ThenInclude(rewardItem => rewardItem.Item)
-                    .ThenInclude(item => item.Category)
-            .Where(reward =>
-                dbContext.ChestLootGenerations.Any(generation =>
-                    generation.RewardId == reward.Id
-                    && generation.DungeonRunId == dungeonRunId
-                    && generation.ChestId == chestId
-                )
-            )
-            .SingleOrDefaultAsync(cancellationToken);
 }
