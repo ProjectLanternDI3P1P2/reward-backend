@@ -177,6 +177,48 @@ public static class RewardFakeDataGenerator
             .ToList();
     }
 
+    /// <summary>Creates a mix of active and inactive marketplace listings so filtering is testable.</summary>
+    public static IReadOnlyList<MarketplaceListing> CreateMarketplaceListings(
+        IReadOnlyList<Inventory> inventories,
+        IReadOnlyList<ItemInstance> availableInstances,
+        DateTimeOffset now
+    )
+    {
+        var faker = new Faker("en") { Random = new Randomizer(381) };
+        string[] statuses = ["ACTIVE", "ACTIVE", "ACTIVE", "SOLD", "CANCELLED", "EXPIRED"];
+        var listings = new List<MarketplaceListing>();
+
+        foreach (Inventory inventory in inventories)
+        {
+            IEnumerable<ItemInstance> candidates = availableInstances
+                .Where(instance => instance.InventoryId == inventory.Id)
+                .Take(statuses.Length);
+
+            foreach (
+                (ItemInstance itemInstance, string status) in candidates.Zip(
+                    faker.Random.Shuffle(statuses)
+                )
+            )
+            {
+                listings.Add(
+                    new MarketplaceListing
+                    {
+                        Id = Guid.NewGuid(),
+                        ItemInstanceId = itemInstance.Id,
+                        SellerId = inventory.HeroId,
+                        Quantity = itemInstance.Quantity,
+                        Price = faker.Random.Decimal(5, 500),
+                        Status = status,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                    }
+                );
+            }
+        }
+
+        return listings;
+    }
+
     private static Rarity CreateRarity(
         ItemRarity rarity,
         string color,
