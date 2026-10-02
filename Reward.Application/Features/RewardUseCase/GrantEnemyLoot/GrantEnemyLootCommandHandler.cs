@@ -16,6 +16,7 @@ public sealed class GrantEnemyLootCommandHandler(
     IRewardRepository rewardRepository,
     IInventoryRepository inventoryRepository,
     LootSelectionService lootSelectionService,
+    BossLootSelectionService bossLootSelectionService,
     IClock clock,
     ILogger logger
 ) : IRequestHandler<GrantEnemyLootCommand, GrantEnemyLootResult>
@@ -120,7 +121,7 @@ public sealed class GrantEnemyLootCommandHandler(
         };
 
         // Every selected item comes from the enemy's loot table, by construction.
-        foreach (SelectedLootItem selected in lootSelectionService.Select(table))
+        foreach (SelectedLootItem selected in SelectLoot(request.EnemyType, table))
         {
             ItemInstance itemInstance = reward.CreditItem(
                 inventory,
@@ -147,6 +148,15 @@ public sealed class GrantEnemyLootCommandHandler(
 
         return ToHeroLoot(reward, alreadyGranted: false);
     }
+
+    // A boss always drops a high-rarity equipment item on top of its regular draws.
+    private IReadOnlyList<SelectedLootItem> SelectLoot(
+        RewardSourceType enemyType,
+        LootTable table
+    ) =>
+        enemyType == RewardSourceType.Boss
+            ? bossLootSelectionService.Select(table)
+            : lootSelectionService.Select(table);
 
     private GrantedHeroLoot AcknowledgeDuplicate(
         RewardEntity existing,

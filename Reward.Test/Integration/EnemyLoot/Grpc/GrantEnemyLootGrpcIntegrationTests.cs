@@ -290,45 +290,6 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
         await ShouldFailWithAsync(action, StatusCode.InvalidArgument);
     }
 
-    private Task<EnemyLootReply> GrantAsync(GrantEnemyLootRequest request) =>
-        Fixture
-            .CreateClient()
-            .GrantEnemyLootAsync(request, cancellationToken: TestContext.Current.CancellationToken)
-            .ResponseAsync;
-
-    private static async Task ShouldFailWithAsync(Func<Task> action, StatusCode statusCode) =>
-        await action
-            .Should()
-            .ThrowAsync<RpcException>()
-            .Where(exception => exception.StatusCode == statusCode);
-
-    private static GrantEnemyLootRequest CreateRequest(
-        Guid runId,
-        Guid enemyId,
-        Guid lootTableId,
-        CombatResult result,
-        params SeededHero[] participants
-    )
-    {
-        var request = new GrantEnemyLootRequest
-        {
-            RunId = runId.ToString(),
-            EnemyId = enemyId.ToString(),
-            EnemyKind = EnemyKind.Monster,
-            LootTableId = lootTableId.ToString(),
-            CombatResult = result,
-        };
-        request.Participants.AddRange(
-            participants.Select(participant => new EnemyLootParticipant
-            {
-                PlayerId = participant.PlayerId.ToString(),
-                HeroId = participant.HeroId.ToString(),
-                Status = participant.Status,
-            })
-        );
-        return request;
-    }
-
     // Seeds the catalogue, reward sources, a monster loot table drawing two items from two
     // catalogue items, and one inventory per hero.
     private async Task<SeededEnemy> SeedAsync(
@@ -433,54 +394,6 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         return new SeededEnemy(table.Id, [sword.Id, shield.Id], heroes);
     }
-
-    private static Item CreateItem(
-        string name,
-        Category category,
-        Rarity rarity,
-        DateTimeOffset now
-    ) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            Category = category,
-            Rarity = rarity,
-            Name = name,
-            Description = "Enemy loot.",
-            LevelRequired = 1,
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-
-    private static RewardSource CreateSource(string name) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            Name = name,
-            Description = name,
-        };
-
-    private async Task<IReadOnlyList<Guid>> GetInventoryItemIdsAsync(Guid heroId)
-    {
-        await using AsyncServiceScope scope = Fixture.Services.CreateAsyncScope();
-        RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
-        return await dbContext
-            .ItemInstances.Where(itemInstance => itemInstance.Inventory.HeroId == heroId)
-            .OrderBy(itemInstance => itemInstance.Id)
-            .Select(itemInstance => itemInstance.ItemId)
-            .ToListAsync(TestContext.Current.CancellationToken);
-    }
-
-    private async Task<IReadOnlyList<RewardEntity>> GetRewardsAsync()
-    {
-        await using AsyncServiceScope scope = Fixture.Services.CreateAsyncScope();
-        RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
-        return await dbContext
-            .Rewards.Include(reward => reward.Items)
-            .ToListAsync(TestContext.Current.CancellationToken);
-    }
-
-    private sealed record SeededHero(Guid PlayerId, Guid HeroId, ParticipantStatus Status);
 
     private sealed record SeededEnemy(
         Guid LootTableId,

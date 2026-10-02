@@ -35,6 +35,11 @@ public sealed class GrantEnemyLootCommandHandlerTests
                 repository.GetSourceByNameAsync("MONSTER", It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(new RewardSource { Id = Guid.NewGuid(), Name = "MONSTER" });
+        rewardRepository
+            .Setup(repository =>
+                repository.GetSourceByNameAsync("BOSS", It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(new RewardSource { Id = Guid.NewGuid(), Name = "BOSS" });
     }
 
     [Fact]
@@ -412,6 +417,145 @@ public sealed class GrantEnemyLootCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WonBossCombat_GrantsAtLeastOneRareEquipmentFromTheBossLootTable()
+    {
+        // Arrange a boss table that mostly drops commons: the regular draw picks the potion.
+        Item potion = CreateItem("Health Potion", "POTION");
+        Item blade = CreateItem("Obsidian Blade", "WEAPON", rank: 3);
+        LootTable bossTable = SetupBossTable((potion, 100), (blade, 1));
+        ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
+        Inventory inventory = SetupInventory(participant.HeroId);
+
+        // Act
+        GrantEnemyLootResult result = await CreateHandler()
+            .Handle(
+                CreateBossCommand(bossTable, participant),
+                TestContext.Current.CancellationToken
+            );
+
+        // Assert the guaranteed equipment is granted beside the regular loot, from the table.
+        GrantedHeroLoot heroLoot = result.HeroLoots.Should().ContainSingle().Subject;
+        heroLoot.Items.Select(item => item.ItemId).Should().BeEquivalentTo([potion.Id, blade.Id]);
+        inventory.ItemInstances.Should().Contain(instance => instance.ItemId == blade.Id);
+    }
+
+    [Fact]
+    public async Task Handle_WonBossCombat_GrantsTheGuaranteedEquipmentToEveryEligibleHero()
+    {
+        // Arrange
+        Item potion = CreateItem("Health Potion", "POTION");
+        Item blade = CreateItem("Obsidian Blade", "WEAPON", rank: 3);
+        LootTable bossTable = SetupBossTable((potion, 100), (blade, 1));
+        ActivityParticipant first = CreateParticipant(ParticipationStatus.Active);
+        ActivityParticipant second = CreateParticipant(ParticipationStatus.Dead);
+        Inventory firstInventory = SetupInventory(first.HeroId);
+        Inventory secondInventory = SetupInventory(second.HeroId);
+
+        // Act
+        await CreateHandler()
+            .Handle(
+                CreateBossCommand(bossTable, first, second),
+                TestContext.Current.CancellationToken
+            );
+
+        // Assert
+        firstInventory.ItemInstances.Should().Contain(instance => instance.ItemId == blade.Id);
+        secondInventory.ItemInstances.Should().Contain(instance => instance.ItemId == blade.Id);
+    }
+
+    [Fact]
+    public async Task Handle_LostBossCombat_GeneratesNoBossReward()
+    {
+        // Arrange
+        Item blade = CreateItem("Obsidian Blade", "WEAPON", rank: 3);
+        LootTable bossTable = SetupBossTable((blade, 1));
+        ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
+
+        // Act
+        GrantEnemyLootResult result = await CreateHandler(new ThrowingRandom())
+            .Handle(
+                CreateBossCommand(bossTable, participant) with
+                {
+                    Outcome = CombatOutcome.Lost,
+                },
+                TestContext.Current.CancellationToken
+            );
+
+        // Assert
+        result.HeroLoots.Should().BeEmpty();
+        rewardRepository.Verify(
+            repository => repository.Add(It.IsAny<RewardEntity>()),
+            Times.Never
+        );
+        inventoryRepository.Verify(
+            repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Handle_BossLootTableWithoutRareEquipment_ThrowsInvalidLootTable()
+    {
+        // Arrange a boss table that cannot honour the guarantee.
+        Item potion = CreateItem("Health Potion", "POTION", rank: 4);
+        LootTable bossTable = SetupBossTable((potion, 1));
+        ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
+        SetupInventory(participant.HeroId);
+
+        // Act
+        Func<Task> action = () =>
+            CreateHandler()
+                .Handle(
+                    CreateBossCommand(bossTable, participant),
+                    TestContext.Current.CancellationToken
+                );
+
+        // Assert
+        await action
+            .Should()
+            .ThrowAsync<InvalidLootTableException>()
+            .WithMessage("*no equipment item of Rare rarity or higher*");
+        rewardRepository.Verify(
+            repository => repository.Add(It.IsAny<RewardEntity>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Handle_WonMonsterCombat_DoesNotGuaranteeAHighRarityEquipment()
+    {
+        // Arrange a standard monster table without any rare equipment.
+        Item potion = CreateItem("Health Potion", "POTION");
+        LootTable monsterTable = CreateTable("MONSTER", potion);
+        lootTableRepository
+            .Setup(repository =>
+                repository.GetByIdAsync(monsterTable.Id, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(monsterTable);
+        ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
+        SetupInventory(participant.HeroId);
+
+        // Act
+        GrantEnemyLootResult result = await CreateHandler()
+            .Handle(
+                CreateCommand(participant) with
+                {
+                    LootTableId = monsterTable.Id,
+                },
+                TestContext.Current.CancellationToken
+            );
+
+        // Assert only the regular draw is granted.
+        result
+            .HeroLoots.Should()
+            .ContainSingle()
+            .Which.Items.Should()
+            .ContainSingle()
+            .Which.ItemId.Should()
+            .Be(potion.Id);
+    }
+
+    [Fact]
     public void Validate_ValidCommand_Succeeds()
     {
         // Act
@@ -481,15 +625,35 @@ public sealed class GrantEnemyLootCommandHandlerTests
         withInvalidParticipant.Errors.Should().HaveCountGreaterThanOrEqualTo(3);
     }
 
-    private GrantEnemyLootCommandHandler CreateHandler(IRandomNumberGenerator? random = null) =>
-        new(
+    private GrantEnemyLootCommandHandler CreateHandler(IRandomNumberGenerator? random = null)
+    {
+        var lootSelection = new LootSelectionService(random ?? new FirstRandom());
+        return new GrantEnemyLootCommandHandler(
             lootTableRepository.Object,
             rewardRepository.Object,
             inventoryRepository.Object,
-            new LootSelectionService(random ?? new FirstRandom()),
+            lootSelection,
+            new BossLootSelectionService(lootSelection),
             new FixedClock(),
             new LoggerConfiguration().CreateLogger()
         );
+    }
+
+    private LootTable SetupBossTable(params (Item Item, int Weight)[] entries)
+    {
+        LootTable bossTable = CreateBossTable(entries);
+        lootTableRepository
+            .Setup(repository =>
+                repository.GetByIdAsync(bossTable.Id, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(bossTable);
+        return bossTable;
+    }
+
+    private GrantEnemyLootCommand CreateBossCommand(
+        LootTable bossTable,
+        params ActivityParticipant[] participants
+    ) => new(runId, enemyId, RewardSourceType.Boss, bossTable.Id, CombatOutcome.Won, participants);
 
     private GrantEnemyLootCommand CreateCommand(params ActivityParticipant[] participants) =>
         new(runId, enemyId, RewardSourceType.Monster, table.Id, CombatOutcome.Won, participants);
@@ -538,9 +702,14 @@ public sealed class GrantEnemyLootCommandHandlerTests
     private static ActivityParticipant CreateParticipant(ParticipationStatus status) =>
         new(Guid.NewGuid(), Guid.NewGuid(), status);
 
-    private static Item CreateItem(string name, string category)
+    private static Item CreateItem(string name, string category, int rank = 1)
     {
-        var rarity = new Rarity { Id = CommonRarityId, Label = "Common" };
+        var rarity = new Rarity
+        {
+            Id = GetRarityId(rank),
+            Label = $"Rank {rank}",
+            Rank = rank,
+        };
         return new Item
         {
             Id = Guid.NewGuid(),
@@ -550,6 +719,46 @@ public sealed class GrantEnemyLootCommandHandlerTests
             Category = new Category { Label = category },
         };
     }
+
+    // Groups the items by rarity, one rule per rarity weighted by its heaviest entry.
+    private static LootTable CreateBossTable(params (Item Item, int Weight)[] entries)
+    {
+        var bossTable = new LootTable
+        {
+            Id = Guid.NewGuid(),
+            Difficulty = "NORMAL",
+            SourceType = "BOSS",
+            DrawCount = 1,
+        };
+        foreach (
+            IGrouping<Guid, (Item Item, int Weight)> group in entries.GroupBy(entry =>
+                entry.Item.RarityId
+            )
+        )
+        {
+            bossTable.RarityRules.Add(
+                new LootRarityRule
+                {
+                    RarityId = group.Key,
+                    Weight = group.Max(entry => entry.Weight),
+                    Entries = group
+                        .Select(entry => new LootTableEntry
+                        {
+                            ItemId = entry.Item.Id,
+                            Item = entry.Item,
+                            Weight = 1,
+                            MinQuantity = 1,
+                            MaxQuantity = 1,
+                        })
+                        .ToList(),
+                }
+            );
+        }
+
+        return bossTable;
+    }
+
+    private static Guid GetRarityId(int rank) => new(rank, 0, 0, new byte[8]);
 
     private static LootTable CreateTable(string sourceType, params Item[] items)
     {
@@ -580,7 +789,7 @@ public sealed class GrantEnemyLootCommandHandlerTests
         return table;
     }
 
-    private static readonly Guid CommonRarityId = Guid.NewGuid();
+    private static readonly Guid CommonRarityId = GetRarityId(1);
 
     // Always picks the first interval, which makes every draw reproducible.
     private sealed class FirstRandom : IRandomNumberGenerator
