@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package reward.v1;
+
+option csharp_namespace = "Reward.Contracts.V1";
+
+// Synchronous contract called by Combat when the fight against an enemy ends.
+service RewardEnemyLootService {
+  // Grants the enemy loot to every eligible participant when the combat is won.
+  // A combat that is not won grants nothing. Replaying the same enemy returns the
+  // loot already granted instead of drawing it again.
+  rpc GrantEnemyLoot (GrantEnemyLootRequest) returns (EnemyLootReply);
+}
+
+enum EnemyKind {
+  ENEMY_KIND_UNSPECIFIED = 0;
+  ENEMY_KIND_MONSTER = 1;
+  ENEMY_KIND_BOSS = 2;
+}
+
+enum CombatResult {
+  COMBAT_RESULT_UNSPECIFIED = 0;
+  COMBAT_RESULT_WON = 1;
+  COMBAT_RESULT_LOST = 2;
+}
+
+enum ParticipantStatus {
+  PARTICIPANT_STATUS_UNSPECIFIED = 0;
+  PARTICIPANT_STATUS_ACTIVE = 1;
+  PARTICIPANT_STATUS_DEAD = 2;
+  PARTICIPANT_STATUS_DISCONNECTED = 3;
+  PARTICIPANT_STATUS_LEFT = 4;
+}
+
+message GrantEnemyLootRequest {
+  string run_id = 1;
+  // Unique per defeated enemy: it is the idempotency cause of the reward.
+  string enemy_id = 2;
+  EnemyKind enemy_kind = 3;
+  // The loot table configured for this enemy.
+  string loot_table_id = 4;
+  CombatResult combat_result = 5;
+  repeated EnemyLootParticipant participants = 6;
+}
+
+message EnemyLootParticipant {
+  string player_id = 1;
+  string hero_id = 2;
+  ParticipantStatus status = 3;
+}
+
+message EnemyLootReply {
+  string enemy_id = 1;
+  // Empty when the combat was not won or when no participant is eligible.
+  repeated HeroEnemyLoot hero_loots = 2;
+}
+
+message HeroEnemyLoot {
+  string hero_id = 1;
+  string reward_id = 2;
+  bool already_granted = 3;
+  repeated EnemyLootItem items = 4;
+}
+
+message EnemyLootItem {
+  string item_id = 1;
+  // Empty when the stack was later consumed or removed.
+  string item_instance_id = 2;
+  int32 quantity = 3;
+}
