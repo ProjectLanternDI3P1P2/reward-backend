@@ -1,12 +1,11 @@
-using System.Text.Json.Serialization;
-
 namespace Reward.Presentation.DTO;
 
 /// <summary>Identifies one chest interaction in a dungeon run.</summary>
-public sealed record GenerateChestLootRequest(
-    Guid CommandId,
-    Guid DungeonRunId,
-    [property: JsonRequired] int ChestElementId,
-    int Floor,
-    string Difficulty
-);
+public sealed record GenerateChestLootRequest
+{
+    public required Guid CommandId { get; init; }
+    public required Guid DungeonRunId { get; init; }
+    public required int ChestElementId { get; init; }
+    public required int Floor { get; init; }
+    public required string Difficulty { get; init; }
+}

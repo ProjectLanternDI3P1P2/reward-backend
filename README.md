@@ -200,57 +200,20 @@ application interface.
 
 ## Chest loot HTTP API
 
-`POST /api/v1/chest-loot/generate` generates the immutable loot for one dungeon
-chest. The Gateway exposes the same operation at
-`POST /api/v1/rewards/chest-loot/generate`; the frontend reaches that Gateway
-route through its dungeon API boundary.
-
-The request contains the following fields:
+`POST /api/v1/chest-loot/generate` generates immutable dungeon chest loot; the
+Gateway route is `POST /api/v1/rewards/chest-loot/generate`.
 
 | Field | Type | Rules |
 | --- | --- | --- |
-| `commandId` | UUID | Required command and correlation identifier. |
-| `dungeonRunId` | UUID | Required dungeon run identifier. |
-| `chestElementId` | integer | Required JSON property; zero is valid and negative values are rejected by business validation. |
-| `floor` | integer | At least `1`. |
-| `difficulty` | string | `NORMAL` or `HARD`; surrounding whitespace is trimmed and the value is normalized to uppercase. |
+| `commandId`, `dungeonRunId` | UUID | Required and non-empty. |
+| `chestElementId` | integer | Required; `>= 0` (zero is valid). |
+| `floor` | integer | Required; `>= 1`. |
+| `difficulty` | string | Required; `NORMAL` or `HARD`. |
 
-The service derives a stable name-based UUID `chestId` from the dungeon run,
-floor and chest element. A successful response is a `GenerateChestLootResult`
-with `rewardId`, `dungeonRunId`, `chestId`, `lootTableId`, `floor`, `difficulty`,
-`alreadyGenerated`, and `items`. Each item contains `itemId`, `name`, `rarity`,
-and `quantity`.
-
-Malformed JSON, or a missing or `null` `chestElementId` property, returns HTTP
-400. Business validation failures return HTTP 422 problem details; for example,
-an explicitly supplied negative `chestElementId` is invalid. A missing exact `CHEST`
-table for the requested floor and difficulty returns HTTP 404; a configured but
-invalid table returns HTTP 409. These failures leave no partial reward state;
-rejection logs are persisted separately after the command transaction has
-rolled back.
-
-The first request selects from the exact floor/difficulty table and persists
-the reward and item snapshots under the existing run/chest generation lock.
-Replaying the chest returns the saved snapshot with `alreadyGenerated: true`;
-it does not consult changed loot tables, draw new items, or publish another
-generation event. The seeded development catalogue contains both `NORMAL` and
-`HARD` tables for floors 1 through 4.
-
-Chest generation writes committed outbox messages for the first-generation
-event and the structured generation log. Their RabbitMQ routing keys are
-`rewards.chest-loot-generated.v1` and
-`logs.reward.chest-loot-generation.v1`, respectively, on the durable
-`rewards.events` topic exchange. Replays keep the log and use the `REPLAYED`
-outcome; rejected requests use the same log type with the `REJECTED` outcome.
-The local Compose stack routes these messages through its `rabbitmq` service
-when `RabbitMq:Enabled` is true.
-
-Chest coverage includes stable identity and validation unit tests, handler
-tests for first generation and immutable replay, and HTTP integration tests
-for exact contexts, table mutation replay, concurrent calls, independent run,
-floor and element contexts, atomic invalid requests, and invalid tables. The
-integration tests also verify inventory independence and the generated,
-replayed and rejected outbox records.
+The result contains the reward, stable `chestId`, table context, generation
+status, and item snapshots. Replays return the saved snapshot and do not add
+items to inventory. Malformed JSON or missing/null required fields return 400;
+business validation returns 422, a missing table 404, and an invalid table 409.
 
 ## Branching flow
 

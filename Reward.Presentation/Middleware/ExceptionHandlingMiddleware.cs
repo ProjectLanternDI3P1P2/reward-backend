@@ -8,6 +8,8 @@ namespace Reward.Presentation.Middleware;
 public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment environment)
     : IMiddleware
 {
+    private const string ProblemDetailsContentType = "application/problem+json";
+
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try
@@ -58,7 +60,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status409Conflict;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
@@ -74,7 +76,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status404NotFound;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
@@ -100,7 +102,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
@@ -126,7 +128,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 }

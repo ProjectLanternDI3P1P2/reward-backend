@@ -27,7 +27,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         await SeedContextAsync(1, "HARD");
         Guid commandId = Guid.NewGuid();
         Guid runId = Guid.NewGuid();
-        var request = new GenerateChestLootRequest(commandId, runId, 17, 1, " normal ");
+        GenerateChestLootRequest request = CreateRequest(commandId, runId, 17, 1, " normal ");
         await using AsyncServiceScope beforeScope = fixture.Services.CreateAsyncScope();
         RewardDbContext beforeContext =
             beforeScope.ServiceProvider.GetRequiredService<RewardDbContext>();
@@ -72,10 +72,13 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Generate_MissingOrNullChestElementId_ReturnsBadRequestWithoutGeneration(
-        bool includeNullElementId
+    [InlineData("commandId")]
+    [InlineData("dungeonRunId")]
+    [InlineData("chestElementId")]
+    [InlineData("floor")]
+    [InlineData("difficulty")]
+    public async Task Generate_MissingRequiredProperty_ReturnsBadRequestWithoutGeneration(
+        string omittedProperty
     )
     {
         // Arrange an otherwise valid request so only JSON presence is under test.
@@ -84,13 +87,11 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         {
             ["commandId"] = Guid.NewGuid(),
             ["dungeonRunId"] = Guid.NewGuid(),
+            ["chestElementId"] = 0,
             ["floor"] = 1,
             ["difficulty"] = "NORMAL",
         };
-        if (includeNullElementId)
-        {
-            body["chestElementId"] = null;
-        }
+        body.Remove(omittedProperty).Should().BeTrue();
 
         // Act through ASP.NET JSON binding before the controller can derive a chest identity.
         using HttpClient client = fixture.CreateHttpClient();
@@ -100,30 +101,44 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
             TestContext.Current.CancellationToken
         );
 
-        // Assert omission and null are rejected without silently becoming element zero.
+        // Assert every omission is rejected instead of silently using a CLR default.
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        await using AsyncServiceScope scope = fixture.Services.CreateAsyncScope();
-        RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
-        (await dbContext.Rewards.CountAsync(TestContext.Current.CancellationToken)).Should().Be(0);
-        (await dbContext.ChestLootGenerations.CountAsync(TestContext.Current.CancellationToken))
-            .Should()
-            .Be(0);
-        (
-            await dbContext.OutboxMessages.CountAsync(
-                message => message.Type == ChestLootOutboxMessages.GeneratedEventType,
-                TestContext.Current.CancellationToken
-            )
-        )
-            .Should()
-            .Be(0);
-        (await dbContext.Inventories.CountAsync(TestContext.Current.CancellationToken))
-            .Should()
-            .Be(1);
-        ItemInstance inventoryItem = await dbContext.ItemInstances.SingleAsync(
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+        await AssertNoGenerationAndUnchangedInventoryAsync();
+    }
+
+    [Theory]
+    [InlineData("commandId")]
+    [InlineData("dungeonRunId")]
+    [InlineData("chestElementId")]
+    [InlineData("floor")]
+    [InlineData("difficulty")]
+    public async Task Generate_NullRequiredProperty_RejectsWithoutGeneration(string nullProperty)
+    {
+        // Arrange a present but null required member independently from omission behavior.
+        await SeedContextAsync(1, "NORMAL", includeInventory: true);
+        var body = new Dictionary<string, object?>
+        {
+            ["commandId"] = Guid.NewGuid(),
+            ["dungeonRunId"] = Guid.NewGuid(),
+            ["chestElementId"] = 0,
+            ["floor"] = 1,
+            ["difficulty"] = "NORMAL",
+        };
+        body[nullProperty] = null;
+
+        // Act through JSON conversion and nullable contract enforcement.
+        using HttpClient client = fixture.CreateHttpClient();
+        HttpResponseMessage response = await client.PostAsJsonAsync(
+            "/api/v1/chest-loot/generate",
+            body,
             TestContext.Current.CancellationToken
         );
-        inventoryItem.Quantity.Should().Be(7);
-        inventoryItem.Status.Should().Be(ItemInstanceStatus.Available);
+
+        // Assert null cannot enter generation state for any required field.
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+        await AssertNoGenerationAndUnchangedInventoryAsync();
     }
 
     [Fact]
@@ -132,7 +147,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Arrange the boundary value that represents the first map element.
         await SeedContextAsync(1, "NORMAL");
         Guid runId = Guid.NewGuid();
-        var request = new GenerateChestLootRequest(Guid.NewGuid(), runId, 0, 1, "NORMAL");
+        GenerateChestLootRequest request = CreateRequest(Guid.NewGuid(), runId, 0, 1, "NORMAL");
 
         // Act through normal JSON binding and generation.
         using HttpClient client = fixture.CreateHttpClient();
@@ -149,7 +164,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Arrange and generate the chest once from its original live catalogue values.
         SeededContext seeded = await SeedContextAsync(1, "NORMAL");
         Guid runId = Guid.NewGuid();
-        var request = new GenerateChestLootRequest(Guid.NewGuid(), runId, 4, 1, "NORMAL");
+        GenerateChestLootRequest request = CreateRequest(Guid.NewGuid(), runId, 4, 1, "NORMAL");
         using HttpClient client = fixture.CreateHttpClient();
         GenerateChestLootResult first = await PostSuccessAsync(client, request);
 
@@ -214,7 +229,13 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         await SeedContextAsync(1, "NORMAL");
         Guid runId = Guid.NewGuid();
         using HttpClient client = fixture.CreateHttpClient();
-        var firstRequest = new GenerateChestLootRequest(Guid.NewGuid(), runId, 3, 1, "NORMAL");
+        GenerateChestLootRequest firstRequest = CreateRequest(
+            Guid.NewGuid(),
+            runId,
+            3,
+            1,
+            "NORMAL"
+        );
         var secondRequest = firstRequest with { CommandId = Guid.NewGuid() };
 
         // Act concurrently so PostgreSQL must serialize the existing generation command.
@@ -275,10 +296,10 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         Guid secondRun = Guid.NewGuid();
         GenerateChestLootRequest[] requests =
         [
-            new(Guid.NewGuid(), firstRun, 1, 1, "NORMAL"),
-            new(Guid.NewGuid(), firstRun, 2, 1, "NORMAL"),
-            new(Guid.NewGuid(), firstRun, 1, 2, "NORMAL"),
-            new(Guid.NewGuid(), secondRun, 1, 1, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), firstRun, 1, 1, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), firstRun, 2, 1, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), firstRun, 1, 2, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), secondRun, 1, 1, "NORMAL"),
         ];
 
         // Act sequentially to isolate identity semantics from the concurrency test.
@@ -298,6 +319,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     [Theory]
     [InlineData(-1, 1, "NORMAL", HttpStatusCode.UnprocessableEntity)]
     [InlineData(0, 0, "NORMAL", HttpStatusCode.UnprocessableEntity)]
+    [InlineData(0, -1, "NORMAL", HttpStatusCode.UnprocessableEntity)]
     [InlineData(0, 1, "ELITE", HttpStatusCode.UnprocessableEntity)]
     [InlineData(0, 4, "NORMAL", HttpStatusCode.NotFound)]
     public async Task Generate_InvalidOrMissingContext_IsAtomicAndWritesRejectedLog(
@@ -309,7 +331,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     {
         // Arrange one valid table and an existing inventory row that failures must not touch.
         await SeedContextAsync(1, "NORMAL", includeInventory: true);
-        var request = new GenerateChestLootRequest(
+        GenerateChestLootRequest request = CreateRequest(
             Guid.NewGuid(),
             Guid.NewGuid(),
             chestElementId,
@@ -345,12 +367,46 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         ChestLootGenerationLog.Parser.ParseFrom(rejected.Payload).Outcome.Should().Be("REJECTED");
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Generate_EmptyUuid_IsRejectedAtomically(bool emptyCommandId)
+    {
+        // Arrange one explicit empty UUID while keeping every JSON property present.
+        await SeedContextAsync(1, "NORMAL", includeInventory: true);
+        GenerateChestLootRequest request = CreateRequest(
+            emptyCommandId ? Guid.Empty : Guid.NewGuid(),
+            emptyCommandId ? Guid.NewGuid() : Guid.Empty,
+            0,
+            1,
+            "NORMAL"
+        );
+
+        // Act through application validation rather than JSON binding.
+        using HttpClient client = fixture.CreateHttpClient();
+        HttpResponseMessage response = await client.PostAsJsonAsync(
+            "/api/v1/chest-loot/generate",
+            request,
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert explicit empty identifiers remain business validation errors with no state change.
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        await AssertNoGenerationAndUnchangedInventoryAsync();
+    }
+
     [Fact]
     public async Task Generate_InvalidTable_RollsBackAllRewardStateAndWritesRejectedLog()
     {
         // Arrange a matching table with no selectable rarity rule.
         await SeedContextAsync(1, "NORMAL", includeRule: false, includeInventory: true);
-        var request = new GenerateChestLootRequest(Guid.NewGuid(), Guid.NewGuid(), 0, 1, "NORMAL");
+        GenerateChestLootRequest request = CreateRequest(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0,
+            1,
+            "NORMAL"
+        );
 
         // Act through selection failure and centralized HTTP exception mapping.
         using HttpClient client = fixture.CreateHttpClient();
@@ -525,6 +581,49 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
                 TestContext.Current.CancellationToken
             )
         )!;
+    }
+
+    private static GenerateChestLootRequest CreateRequest(
+        Guid commandId,
+        Guid dungeonRunId,
+        int chestElementId,
+        int floor,
+        string difficulty
+    ) =>
+        new()
+        {
+            CommandId = commandId,
+            DungeonRunId = dungeonRunId,
+            ChestElementId = chestElementId,
+            Floor = floor,
+            Difficulty = difficulty,
+        };
+
+    private async Task AssertNoGenerationAndUnchangedInventoryAsync()
+    {
+        // Verify malformed JSON never reaches reward, event or inventory mutation.
+        await using AsyncServiceScope scope = fixture.Services.CreateAsyncScope();
+        RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
+        (await dbContext.Rewards.CountAsync(TestContext.Current.CancellationToken)).Should().Be(0);
+        (await dbContext.ChestLootGenerations.CountAsync(TestContext.Current.CancellationToken))
+            .Should()
+            .Be(0);
+        (
+            await dbContext.OutboxMessages.CountAsync(
+                message => message.Type == ChestLootOutboxMessages.GeneratedEventType,
+                TestContext.Current.CancellationToken
+            )
+        )
+            .Should()
+            .Be(0);
+        (await dbContext.Inventories.CountAsync(TestContext.Current.CancellationToken))
+            .Should()
+            .Be(1);
+        ItemInstance inventoryItem = await dbContext.ItemInstances.SingleAsync(
+            TestContext.Current.CancellationToken
+        );
+        inventoryItem.Quantity.Should().Be(7);
+        inventoryItem.Status.Should().Be(ItemInstanceStatus.Available);
     }
 
     private static Task<List<InventoryItemState>> ReadInventoryAsync(RewardDbContext context) =>
