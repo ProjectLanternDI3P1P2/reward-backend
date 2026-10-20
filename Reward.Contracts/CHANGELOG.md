@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/contracts-v2.0.0...contracts-v3.0.0) (2026-10-20)
+
+
+### Added
+
+* **contracts:** add active equipment grpc contract ([a9d9565](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/a9d956568a71479d4d9d06f7353ddb2af716fd24))
+* **contracts:** define inventory grpc contract ([a32cb37](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/a32cb37bd5e1b7be09315459a663ac902990e2b8))
+* **reward:** add inventory and marketplace domain ([83e43e2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/83e43e2eda04da7b8309ad7cce0031530dba19e9))
+* **reward:** generate chest loot by dungeon context ([ebd6a80](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/ebd6a80c3b164a5b7aea0efc7c2c734711ebe4a3))
+* **reward:** generate chest loot by dungeon context ([c2ce115](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/c2ce115505509fcd856a6535ea1bc87156952863))
+
+
+### Fixed
+
+* edit configurations name ([9049a2e](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/9049a2ee5698b9003115d50ddb7dd5413e774c8f))
+
 ## [2.0.0](https://github.com/ProjectLanternDI3P1P2/dotnet-backend-template/compare/contracts-v1.0.0...contracts-v2.0.0) (2026-09-23)
 
 
