@@ -12,7 +12,7 @@ public sealed class MarketplaceRepository(RewardDbContext dbContext) : IMarketpl
     ) =>
         await dbContext
             .MarketplaceListings.AsNoTracking()
-            .Where(listing => listing.Status == "ACTIVE")
+            .Where(listing => listing.Status == MarketplaceListingStatus.Active)
             .Include(listing => listing.ItemInstance)
                 .ThenInclude(itemInstance => itemInstance.Item)
                     .ThenInclude(item => item.Category)

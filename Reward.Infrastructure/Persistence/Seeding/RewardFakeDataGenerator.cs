@@ -185,7 +185,15 @@ public static class RewardFakeDataGenerator
     )
     {
         var faker = new Faker("en") { Random = new Randomizer(381) };
-        string[] statuses = ["ACTIVE", "ACTIVE", "ACTIVE", "SOLD", "CANCELLED", "EXPIRED"];
+        string[] statuses =
+        [
+            MarketplaceListingStatus.Active,
+            MarketplaceListingStatus.Active,
+            MarketplaceListingStatus.Active,
+            MarketplaceListingStatus.Sold,
+            MarketplaceListingStatus.Cancelled,
+            MarketplaceListingStatus.Expired,
+        ];
         var listings = new List<MarketplaceListing>();
 
         foreach (Inventory inventory in inventories)
