@@ -62,7 +62,7 @@
 | Configuration | `IOptions<T>` |
 | Containers | Dockerfile per service |
 | Health checks | `/health/live`, `/health/ready` |
-| Code formatting | Standard .NET + repository `.editorconfig` |
+| Code formatting | CSharpier + repository `.editorconfig` |
 | Static analysis | SonarQube Cloud |
 | Code coverage | `dotnet-coverage` |
 | Dependency updates | Dependabot |

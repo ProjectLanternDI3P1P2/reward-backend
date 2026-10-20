@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    name: Pack and publish Combat.Contracts
+    name: Pack and publish Reward.Contracts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
 
       - name: Pack released Protocol Buffer contract
-        run: dotnet pack Combat.Contracts/Combat.Contracts.csproj --configuration Release --output artifacts/contracts
+        run: dotnet pack Reward.Contracts/Reward.Contracts.csproj --configuration Release --output artifacts/contracts
 
       - name: Publish package to GitHub Packages
         run: dotnet nuget push "artifacts/contracts/*.nupkg" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key "${{ secrets.GITHUB_TOKEN }}" --skip-duplicate

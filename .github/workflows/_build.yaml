@@ -22,4 +22,4 @@ jobs:
       # Release, unlike the test job: a warning that only surfaces in a release build
       # should fail here rather than at packaging time.
       - name: Build solution
-        run: dotnet build Combat.Presentation.slnx --configuration Release
+        run: dotnet build Reward.Presentation.slnx --configuration Release

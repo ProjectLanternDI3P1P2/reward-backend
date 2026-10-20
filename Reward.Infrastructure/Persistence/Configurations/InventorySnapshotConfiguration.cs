@@ -1,0 +1,23 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Reward.Domain.Entities;
+
+namespace Reward.Infrastructure.Persistence.Configurations;
+
+public sealed class InventorySnapshotConfiguration : IEntityTypeConfiguration<InventorySnapshot>
+{
+    public void Configure(EntityTypeBuilder<InventorySnapshot> builder)
+    {
+        builder.ToTable("inventory_snapshot");
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.InventoryId).HasColumnName("inventory_id");
+        builder.Property(x => x.RunId).HasColumnName("run_id");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.HasIndex(x => new { x.InventoryId, x.RunId }).IsUnique();
+        builder
+            .HasOne(x => x.Inventory)
+            .WithMany(x => x.Snapshots)
+            .HasForeignKey(x => x.InventoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

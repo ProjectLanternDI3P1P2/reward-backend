@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package reward.events.v1;
+
+option csharp_namespace = "Reward.Contracts.Events.V1";
+
+// Transport-neutral envelope. Brokers carry its serialized bytes unchanged.
+message MessageEnvelopeMessage {
+  string message_id = 1;
+  string correlation_id = 2;
+  string causation_id = 3;
+  string type = 4;
+  int32 version = 5;
+  string occurred_at_utc = 6;
+  string producer = 7;
+  bytes payload = 8;
+}
+
+message PlaceholderCreated {
+  string placeholder_id = 1;
+  string name = 2;
+  int32 attack = 3;
+  int32 health = 4;
+  int32 max_health = 5;
+}
+
+// Immutable business event emitted only when a chest reward is first generated.
+message ChestLootGenerated {
+  string command_id = 1;
+  string reward_id = 2;
+  string dungeon_run_id = 3;
+  string chest_id = 4;
+  string loot_table_id = 5;
+  int32 floor = 6;
+  string difficulty = 7;
+  repeated ChestLootGeneratedItem items = 8;
+}
+
+message ChestLootGeneratedItem {
+  string item_id = 1;
+  string name = 2;
+  string rarity = 3;
+  int32 quantity = 4;
+}
+
+// Structured business log delivered through RabbitMQ for this use case only.
+message ChestLootGenerationLog {
+  string command_id = 1;
+  string reward_id = 2;
+  string dungeon_run_id = 3;
+  string chest_id = 4;
+  string loot_table_id = 5;
+  int32 floor = 6;
+  string difficulty = 7;
+  string outcome = 8;
+  bool already_generated = 9;
+  int32 item_count = 10;
+  string reason = 11;
+}

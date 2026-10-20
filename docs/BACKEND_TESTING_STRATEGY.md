@@ -70,6 +70,14 @@ The schema must correspond to the service migrations.
 Respawn resets application data between tests while keeping the schema available.
 Tests must not depend on execution order.
 
+For local controller integration tests, start the PostgreSQL service from
+`compose.yaml`. Each independent aggregate/controller collection creates and
+owns a dedicated test database, so unrelated collections can run in parallel
+while Respawn remains isolated. Tests use port `5433` by default. Override the
+administrative connection with `REWARD_TEST_DATABASE_CONNECTION` when needed;
+it is only used to create and connect to dedicated test databases, never to
+reset development data.
+
 # Test data
 
 Use explicit data when exact values matter to the scenario.

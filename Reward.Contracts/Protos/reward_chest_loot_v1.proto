@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package reward.v1;
+
+option csharp_namespace = "Reward.Contracts.V1";
+
+// Synchronous contract called by Dungeon when a chest is opened.
+service RewardLootService {
+  rpc GenerateChestLoot (GenerateChestLootRequest) returns (ChestLootReply);
+}
+
+message GenerateChestLootRequest {
+  string command_id = 1;
+  string dungeon_run_id = 2;
+  string chest_id = 3;
+  int32 floor = 4;
+  string difficulty = 5;
+}
+
+message ChestLootReply {
+  string reward_id = 1;
+  string dungeon_run_id = 2;
+  string chest_id = 3;
+  int32 floor = 4;
+  string difficulty = 5;
+  bool already_generated = 6;
+  repeated ChestLootItem items = 7;
+}
+
+message ChestLootItem {
+  string item_id = 1;
+  string name = 2;
+  string rarity = 3;
+  int32 quantity = 4;
+}

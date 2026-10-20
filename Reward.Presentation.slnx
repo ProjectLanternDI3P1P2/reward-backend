@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Reward.Application\Reward.Application.csproj" />
+  <Project Path="Reward.Contracts\Reward.Contracts.csproj" />
+  <Project Path="Reward.Domain\Reward.Domain.csproj" />
+  <Project Path="Reward.Infrastructure\Reward.Infrastructure.csproj" />
+  <Project Path="Reward.Presentation\Reward.Presentation.csproj" />
+  <Project Path="Reward.Test\Reward.Test.csproj" Id="cd984a8a-40c0-41c1-a8df-cac3f3814504" />
+</Solution>
