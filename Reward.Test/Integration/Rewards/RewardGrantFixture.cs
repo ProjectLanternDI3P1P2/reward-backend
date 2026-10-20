@@ -8,6 +8,8 @@ public sealed class RewardGrantFixture : IAsyncLifetime
 
     public IServiceProvider Services =>
         factory?.Services ?? throw new InvalidOperationException("Fixture not initialized.");
+    public HttpClient HttpClient =>
+        factory?.CreateClient() ?? throw new InvalidOperationException("Fixture not initialized.");
 
     public async ValueTask InitializeAsync()
     {
