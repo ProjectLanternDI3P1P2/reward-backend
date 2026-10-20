@@ -198,23 +198,6 @@ the `rabbitmq` service. For a local run without the broker, leave `Enabled` fals
 the no-op adapter keeps the application runnable while preserving the same
 application interface.
 
-## Chest loot HTTP API
-
-`POST /api/v1/chest-loot/generate` generates immutable dungeon chest loot; the
-Gateway route is `POST /api/v1/rewards/chest-loot/generate`.
-
-| Field | Type | Rules |
-| --- | --- | --- |
-| `commandId`, `dungeonRunId` | UUID | Required and non-empty. |
-| `chestElementId` | integer | Required; `>= 0` (zero is valid). |
-| `floor` | integer | Required; `>= 1`. |
-| `difficulty` | string | Required; `NORMAL` or `HARD`. |
-
-The result contains the reward, stable `chestId`, table context, generation
-status, and item snapshots. Replays return the saved snapshot and do not add
-items to inventory. Malformed JSON or missing/null required fields return 400;
-business validation returns 422, a missing table 404, and an invalid table 409.
-
 ## Branching flow
 
 ```text

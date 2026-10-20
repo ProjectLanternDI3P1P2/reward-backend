@@ -113,28 +113,29 @@ public static class RewardFakeDataGenerator
     )
     {
         // Give harder and later contexts more draws while retaining the database default of one.
-        (int Floor, string Difficulty, int DrawCount)[] contexts =
+        (int Floor, ChestLootDifficulty Difficulty, int DrawCount)[] contexts =
         [
-            (1, "NORMAL", 2),
-            (1, "HARD", 3),
-            (2, "NORMAL", 3),
-            (2, "HARD", 4),
-            (3, "NORMAL", 4),
-            (3, "HARD", 5),
-            (4, "NORMAL", 5),
-            (4, "HARD", 6),
+            (1, ChestLootDifficulty.Normal, 2),
+            (1, ChestLootDifficulty.Hard, 3),
+            (2, ChestLootDifficulty.Normal, 3),
+            (2, ChestLootDifficulty.Hard, 4),
+            (3, ChestLootDifficulty.Normal, 4),
+            (3, ChestLootDifficulty.Hard, 5),
+            (4, ChestLootDifficulty.Normal, 5),
+            (4, ChestLootDifficulty.Hard, 6),
         ];
 
         // Build one complete weighted graph for each exact dungeon context.
         return contexts
             .Select(context =>
             {
+                string difficulty = context.Difficulty.ToCode();
                 var table = new LootTable
                 {
                     Id = Guid.NewGuid(),
-                    Name = $"Chest floor {context.Floor} {context.Difficulty}",
+                    Name = $"Chest floor {context.Floor} {difficulty}",
                     Floor = context.Floor,
-                    Difficulty = context.Difficulty,
+                    Difficulty = difficulty,
                     SourceType = "CHEST",
                     DrawCount = context.DrawCount,
                     CreatedAt = now,
