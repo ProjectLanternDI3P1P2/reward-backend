@@ -67,6 +67,18 @@ public sealed class DataSeederTests
         (await context.LootTables.CountAsync(TestContext.Current.CancellationToken))
             .Should()
             .Be(lootTablesAfterFirstSeed);
+
+        // Assert marketplace listings are seeded with a mix of statuses and stay idempotent.
+        List<MarketplaceListing> listings = await context.MarketplaceListings.ToListAsync(
+            TestContext.Current.CancellationToken
+        );
+        listings.Should().NotBeEmpty();
+        listings.Should().Contain(listing => listing.Status == MarketplaceListingStatus.Active);
+        int marketplaceListingsAfterFirstSeed = listings.Count;
+        await DataSeeder.SeedAsync(context, TestContext.Current.CancellationToken);
+        (await context.MarketplaceListings.CountAsync(TestContext.Current.CancellationToken))
+            .Should()
+            .Be(marketplaceListingsAfterFirstSeed);
     }
 
     private static RewardDbContext CreateInMemoryDbContext() =>
