@@ -13,12 +13,8 @@ public sealed class MarketplaceRepository(RewardDbContext dbContext) : IMarketpl
         await dbContext
             .MarketplaceListings.AsNoTracking()
             .Where(listing => listing.Status == MarketplaceListingStatus.Active)
-            .Include(listing => listing.ItemInstance)
-                .ThenInclude(itemInstance => itemInstance.Item)
-                    .ThenInclude(item => item.Category)
-            .Include(listing => listing.ItemInstance)
-                .ThenInclude(itemInstance => itemInstance.Item)
-                    .ThenInclude(item => item.Rarity)
+            .Include(listing => listing.ItemInstance.Item.Category)
+            .Include(listing => listing.ItemInstance.Item.Rarity)
             .OrderBy(listing => listing.CreatedAt)
             .ToListAsync(cancellationToken);
 }
