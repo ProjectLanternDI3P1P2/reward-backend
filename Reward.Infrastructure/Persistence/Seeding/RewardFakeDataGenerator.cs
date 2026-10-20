@@ -106,7 +106,7 @@ public static class RewardFakeDataGenerator
             CreateInventory("33333333-3333-3333-3333-333333333333", now),
         ];
 
-    /// <summary>Creates the four reproducible CHEST contexts used during local development.</summary>
+    /// <summary>Creates NORMAL and HARD CHEST contexts for the four dungeon floors.</summary>
     public static IReadOnlyList<LootTable> CreateChestLootTables(
         IReadOnlyList<Item> items,
         DateTimeOffset now
@@ -119,6 +119,10 @@ public static class RewardFakeDataGenerator
             (1, "HARD", 3),
             (2, "NORMAL", 3),
             (2, "HARD", 4),
+            (3, "NORMAL", 4),
+            (3, "HARD", 5),
+            (4, "NORMAL", 5),
+            (4, "HARD", 6),
         ];
 
         // Build one complete weighted graph for each exact dungeon context.
