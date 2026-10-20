@@ -152,6 +152,59 @@ public sealed class BossLootSelectionServiceTests
     }
 
     [Fact]
+    public void Select_WhenAGuaranteedItemIsAdded_LeavesTheOriginalTableUnchanged()
+    {
+        // Arrange a two-draw table that needs the guarantee, with a snapshot of its shape.
+        Item potion = CreateItem("POTION", Common);
+        Item sword = CreateItem("SWORD", Rare);
+        LootTable table = CreateTable((potion, Weight: 100), (sword, Weight: 1));
+        table.DrawCount = 2;
+        List<LootRarityRule> rulesBefore = table.RarityRules.ToList();
+        List<List<LootTableEntry>> entriesBefore = rulesBefore
+            .Select(rule => rule.Entries.ToList())
+            .ToList();
+
+        // Act: two regular draws of the potion, then the guaranteed draw.
+        IReadOnlyList<SelectedLootItem> result = CreateService(0, 0, 0, 0, 0, 0, 0, 0, 0)
+            .Select(table);
+
+        // Assert the regular draws are aggregated and the guaranteed sword is added once.
+        result.Single(selected => selected.Item == potion).Quantity.Should().Be(2);
+        result.Single(selected => selected.Item == sword).Quantity.Should().Be(1);
+        table.DrawCount.Should().Be(2);
+        table.RarityRules.Should().Equal(rulesBefore);
+        table
+            .RarityRules.Select(rule => rule.Entries.ToList())
+            .Should()
+            .BeEquivalentTo(entriesBefore, options => options.WithStrictOrdering());
+        table.RarityRules.Should().OnlyContain(rule => rule.Entries.Count == 1);
+    }
+
+    [Fact]
+    public void Select_SeveralQualifyingRarities_PicksTheGuaranteedItemByRarityWeight()
+    {
+        // Arrange a Rare sword (weight 1) and an Epic armor (weight 3) beside a common potion.
+        Item potion = CreateItem("POTION", Common);
+        Item rareSword = CreateItem("SWORD", Rare);
+        Item epicArmor = CreateItem("ARMOR", Epic);
+        LootTable table = CreateTable(
+            (potion, Weight: 100),
+            (rareSword, Weight: 1),
+            (epicArmor, Weight: 3)
+        );
+
+        // Act: the regular draw picks the potion, then the guaranteed rarity draw lands in the
+        // second weighted interval (4 values: Rare covers 0, Epic covers 1 to 3).
+        IReadOnlyList<SelectedLootItem> result = CreateService(0, 0, 0, 1, 0, 0).Select(table);
+
+        // Assert
+        result
+            .Select(selected => selected.Item.Id)
+            .Should()
+            .BeEquivalentTo([potion.Id, epicArmor.Id]);
+    }
+
+    [Fact]
     public void Select_NullTable_Throws()
     {
         // Act

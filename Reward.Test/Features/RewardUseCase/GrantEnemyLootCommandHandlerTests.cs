@@ -393,25 +393,99 @@ public sealed class GrantEnemyLootCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_InventoryFull_ThrowsAndAddsNoItem()
+    public async Task Handle_InventoryFull_SkipsTheHeroAndPersistsNothing()
     {
         // Arrange
         ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
-        SetupInventory(participant.HeroId, itemCapacity: 0);
+        Inventory inventory = SetupInventory(participant.HeroId, itemCapacity: 0);
 
         // Act
-        Func<Task> action = () =>
-            CreateHandler()
-                .Handle(CreateCommand(participant), TestContext.Current.CancellationToken);
+        GrantEnemyLootResult result = await CreateHandler()
+            .Handle(CreateCommand(participant), TestContext.Current.CancellationToken);
 
         // Assert
-        await action.Should().ThrowAsync<InventoryCapacityExceededException>();
+        result.HeroLoots.Should().BeEmpty();
+        result.FullInventoryHeroIds.Should().ContainSingle().Which.Should().Be(participant.HeroId);
+        inventory.ItemInstances.Should().BeEmpty();
         rewardRepository.Verify(
             repository => repository.Add(It.IsAny<RewardEntity>()),
             Times.Never
         );
         inventoryRepository.Verify(
             repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Handle_OneInventoryFull_StillGrantsTheLootOfTheOtherHeroes()
+    {
+        // Arrange two heroes, the first one without any room.
+        ActivityParticipant full = CreateParticipant(ParticipationStatus.Active);
+        ActivityParticipant withRoom = CreateParticipant(ParticipationStatus.Active);
+        Inventory fullInventory = SetupInventory(full.HeroId, itemCapacity: 0);
+        Inventory roomyInventory = SetupInventory(withRoom.HeroId);
+
+        // Act
+        GrantEnemyLootResult result = await CreateHandler()
+            .Handle(CreateCommand(full, withRoom), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.HeroLoots.Should().ContainSingle().Which.HeroId.Should().Be(withRoom.HeroId);
+        result.FullInventoryHeroIds.Should().ContainSingle().Which.Should().Be(full.HeroId);
+        roomyInventory.ItemInstances.Should().NotBeEmpty();
+        fullInventory.ItemInstances.Should().BeEmpty();
+        rewardRepository.Verify(repository => repository.Add(It.IsAny<RewardEntity>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_InventoryHoldingOnlyPartOfTheLoot_KeepsNothingOfIt()
+    {
+        // Arrange a boss loot of a potion and an equipment item for an inventory that has
+        // potion slots but no item slot: the potion would fit, the equipment would not.
+        Item potion = CreateItem("Health Potion", "POTION");
+        Item blade = CreateItem("Obsidian Blade", "WEAPON", rank: 3);
+        LootTable bossTable = SetupBossTable((potion, 100), (blade, 1));
+        ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
+        Inventory inventory = SetupInventory(participant.HeroId, itemCapacity: 0);
+
+        // Act
+        GrantEnemyLootResult result = await CreateHandler()
+            .Handle(
+                CreateBossCommand(bossTable, participant),
+                TestContext.Current.CancellationToken
+            );
+
+        // Assert the potion that fitted is not left behind.
+        result.FullInventoryHeroIds.Should().ContainSingle();
+        inventory.ItemInstances.Should().BeEmpty();
+        inventoryRepository.Verify(
+            repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Handle_ReplayedOperationAfterTheLootTableWasRemoved_ReturnsThePersistedLoot()
+    {
+        // Arrange a persisted reward whose loot table no longer exists.
+        ActivityParticipant participant = CreateParticipant(ParticipationStatus.Active);
+        RewardEntity existing = CreateExistingReward(participant.HeroId, RewardStatus.Applied);
+        SetupExistingReward(participant.HeroId, existing);
+        lootTableRepository
+            .Setup(repository =>
+                repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync((LootTable?)null);
+
+        // Act
+        GrantEnemyLootResult result = await CreateHandler(new ThrowingRandom())
+            .Handle(CreateCommand(participant), TestContext.Current.CancellationToken);
+
+        // Assert the replay never needed the table.
+        result.HeroLoots.Should().ContainSingle().Which.AlreadyGranted.Should().BeTrue();
+        lootTableRepository.Verify(
+            repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
     }

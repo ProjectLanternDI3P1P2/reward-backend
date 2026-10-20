@@ -35,9 +35,76 @@ public sealed class GrantEnemyLootCommandHandler(
                 request.EnemyId,
                 request.Outcome
             );
-            return new GrantEnemyLootResult(request.EnemyId, []);
+            return new GrantEnemyLootResult(request.EnemyId, [], []);
         }
 
+        // Heroes are handled in a stable order so concurrent deliveries lock their
+        // inventories in the same order.
+        IReadOnlyList<ActivityParticipant> recipients = RewardEligibilityPolicy
+            .GetEligibleParticipants(request.Participants)
+            .OrderBy(participant => participant.HeroId)
+            .ToList();
+
+        // A replay is answered from the persisted rewards alone, so it still works when the
+        // loot table was changed or removed since the first delivery.
+        var heroLoots = new List<GrantedHeroLoot>();
+        var pendingHeroIds = new List<Guid>();
+        foreach (ActivityParticipant recipient in recipients)
+        {
+            RewardEntity? existing = await rewardRepository.GetByKeyAsync(
+                RewardEntity.CreateKey(request.EnemyType, request.EnemyId, recipient.HeroId),
+                cancellationToken
+            );
+            if (existing is null)
+            {
+                pendingHeroIds.Add(recipient.HeroId);
+            }
+            else
+            {
+                heroLoots.Add(AcknowledgeDuplicate(existing, request, recipient.HeroId));
+            }
+        }
+
+        var fullInventoryHeroIds = new List<Guid>();
+        if (pendingHeroIds.Count > 0)
+        {
+            (LootTable table, RewardSource source) = await LoadLootSourceAsync(
+                request,
+                cancellationToken
+            );
+
+            foreach (Guid heroId in pendingHeroIds)
+            {
+                GrantedHeroLoot? heroLoot = await TryGrantToHeroAsync(
+                    request,
+                    table,
+                    source,
+                    heroId,
+                    cancellationToken
+                );
+                if (heroLoot is null)
+                {
+                    fullInventoryHeroIds.Add(heroId);
+                }
+                else
+                {
+                    heroLoots.Add(heroLoot);
+                }
+            }
+        }
+
+        return new GrantEnemyLootResult(
+            request.EnemyId,
+            heroLoots.OrderBy(heroLoot => heroLoot.HeroId).ToList(),
+            fullInventoryHeroIds
+        );
+    }
+
+    private async Task<(LootTable Table, RewardSource Source)> LoadLootSourceAsync(
+        GrantEnemyLootCommand request,
+        CancellationToken cancellationToken
+    )
+    {
         string sourceName = request.EnemyType.ToCode();
         LootTable table =
             await lootTableRepository.GetByIdAsync(request.LootTableId, cancellationToken)
@@ -60,24 +127,12 @@ public sealed class GrantEnemyLootCommandHandler(
                 $"The reward source '{sourceName}' is not configured."
             );
 
-        // Heroes are handled in a stable order so concurrent deliveries lock their
-        // inventories in the same order.
-        IEnumerable<ActivityParticipant> recipients = RewardEligibilityPolicy
-            .GetEligibleParticipants(request.Participants)
-            .OrderBy(participant => participant.HeroId);
-
-        var heroLoots = new List<GrantedHeroLoot>();
-        foreach (ActivityParticipant recipient in recipients)
-        {
-            heroLoots.Add(
-                await GrantToHeroAsync(request, table, source, recipient.HeroId, cancellationToken)
-            );
-        }
-
-        return new GrantEnemyLootResult(request.EnemyId, heroLoots);
+        return (table, source);
     }
 
-    private async Task<GrantedHeroLoot> GrantToHeroAsync(
+    // Returns null when the hero inventory cannot hold all of the loot: nothing is then
+    // drawn into it, persisted or left half applied.
+    private async Task<GrantedHeroLoot?> TryGrantToHeroAsync(
         GrantEnemyLootCommand request,
         LootTable table,
         RewardSource source,
@@ -87,26 +142,31 @@ public sealed class GrantEnemyLootCommandHandler(
     {
         string rewardKey = RewardEntity.CreateKey(request.EnemyType, request.EnemyId, heroId);
 
-        // A replayed command returns the persisted loot instead of drawing a new one.
-        RewardEntity? existing = await rewardRepository.GetByKeyAsync(rewardKey, cancellationToken);
-        if (existing is not null)
-        {
-            return AcknowledgeDuplicate(existing, request, heroId);
-        }
-
         Inventory inventory =
             await inventoryRepository.GetByHeroIdForUpdateAsync(heroId, cancellationToken)
             ?? throw new KeyNotFoundException($"Inventory for hero '{heroId}' was not found.");
 
         // A concurrent delivery of the same operation may have been granted while this one
         // was waiting for the inventory lock.
-        existing = await rewardRepository.GetByKeyAsync(rewardKey, cancellationToken);
+        RewardEntity? existing = await rewardRepository.GetByKeyAsync(rewardKey, cancellationToken);
         if (existing is not null)
         {
             return AcknowledgeDuplicate(existing, request, heroId);
         }
 
+        // Every selected item comes from the enemy's loot table, by construction.
+        IReadOnlyList<SelectedLootItem> loot = SelectLoot(request.EnemyType, table);
         DateTimeOffset now = clock.UtcNow;
+        if (!CanReceive(inventory, loot, now))
+        {
+            logger.Warning(
+                "Enemy loot {RewardKey} skipped: the inventory of hero {HeroId} is full",
+                rewardKey,
+                heroId
+            );
+            return null;
+        }
+
         var reward = new RewardEntity
         {
             Id = Guid.NewGuid(),
@@ -119,9 +179,7 @@ public sealed class GrantEnemyLootCommandHandler(
             RewardKey = rewardKey,
             CreatedAt = now,
         };
-
-        // Every selected item comes from the enemy's loot table, by construction.
-        foreach (SelectedLootItem selected in SelectLoot(request.EnemyType, table))
+        foreach (SelectedLootItem selected in loot)
         {
             ItemInstance itemInstance = reward.CreditItem(
                 inventory,
@@ -157,6 +215,40 @@ public sealed class GrantEnemyLootCommandHandler(
         enemyType == RewardSourceType.Boss
             ? bossLootSelectionService.Select(table)
             : lootSelectionService.Select(table);
+
+    // Credits the loot to a throwaway copy of the inventory first. The real inventory is a
+    // tracked entity that crediting would change, so a hero that cannot hold everything
+    // would otherwise keep the part that fitted.
+    private static bool CanReceive(
+        Inventory inventory,
+        IReadOnlyList<SelectedLootItem> loot,
+        DateTimeOffset now
+    )
+    {
+        var inventoryCopy = new Inventory
+        {
+            Id = inventory.Id,
+            HeroId = inventory.HeroId,
+            ItemCapacity = inventory.ItemCapacity,
+            PotionCapacity = inventory.PotionCapacity,
+            ItemInstances = inventory.ItemInstances.ToList(),
+        };
+        var dryRunReward = new RewardEntity { Id = Guid.NewGuid() };
+
+        try
+        {
+            foreach (SelectedLootItem selected in loot)
+            {
+                dryRunReward.CreditItem(inventoryCopy, selected.Item, selected.Quantity, now);
+            }
+
+            return true;
+        }
+        catch (InventoryCapacityExceededException)
+        {
+            return false;
+        }
+    }
 
     private GrantedHeroLoot AcknowledgeDuplicate(
         RewardEntity existing,

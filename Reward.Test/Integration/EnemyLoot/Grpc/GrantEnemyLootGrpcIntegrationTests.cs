@@ -183,30 +183,101 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
     }
 
     [Fact]
-    public async Task GrantEnemyLoot_InventoryFull_ReturnsFailedPreconditionAndPersistsNothing()
+    public async Task GrantEnemyLoot_InventoryFull_SkipsTheHeroAndPersistsNothing()
     {
         // Arrange
         SeededEnemy seeded = await SeedAsync(heroCount: 1, fillInventory: true);
         int itemCountBefore = (await GetInventoryItemIdsAsync(seeded.Heroes[0].HeroId)).Count;
 
         // Act
-        Func<Task> action = () =>
-            GrantAsync(
-                CreateRequest(
-                    Guid.NewGuid(),
-                    Guid.NewGuid(),
-                    seeded.LootTableId,
-                    CombatResult.Won,
-                    seeded.Heroes[0]
-                )
-            );
+        EnemyLootReply reply = await GrantAsync(
+            CreateRequest(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                seeded.LootTableId,
+                CombatResult.Won,
+                seeded.Heroes[0]
+            )
+        );
 
-        // Assert
-        await ShouldFailWithAsync(action, StatusCode.FailedPrecondition);
+        // Assert the call succeeds and reports the hero that received nothing.
+        reply.HeroLoots.Should().BeEmpty();
+        reply
+            .FullInventoryHeroIds.Should()
+            .ContainSingle()
+            .Which.Should()
+            .Be(seeded.Heroes[0].HeroId.ToString());
         (await GetRewardsAsync()).Should().BeEmpty();
         (await GetInventoryItemIdsAsync(seeded.Heroes[0].HeroId))
             .Should()
             .HaveCount(itemCountBefore);
+    }
+
+    [Fact]
+    public async Task GrantEnemyLoot_OneInventoryFull_StillGrantsTheLootOfTheOtherHeroes()
+    {
+        // Arrange two heroes, the first one without any room.
+        SeededEnemy seeded = await SeedAsync(heroCount: 2, fillInventory: true);
+
+        // Act
+        EnemyLootReply reply = await GrantAsync(
+            CreateRequest(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                seeded.LootTableId,
+                CombatResult.Won,
+                seeded.Heroes[0],
+                seeded.Heroes[1]
+            )
+        );
+
+        // Assert the second hero keeps their loot, and only they have a persisted reward.
+        reply
+            .HeroLoots.Should()
+            .ContainSingle()
+            .Which.HeroId.Should()
+            .Be(seeded.Heroes[1].HeroId.ToString());
+        reply
+            .FullInventoryHeroIds.Should()
+            .ContainSingle()
+            .Which.Should()
+            .Be(seeded.Heroes[0].HeroId.ToString());
+        (await GetInventoryItemIdsAsync(seeded.Heroes[1].HeroId)).Should().NotBeEmpty();
+        (await GetRewardsAsync())
+            .Should()
+            .ContainSingle()
+            .Which.HeroId.Should()
+            .Be(seeded.Heroes[1].HeroId);
+    }
+
+    [Fact]
+    public async Task GrantEnemyLoot_ReplayAfterTheLootTableWasRemoved_ReturnsThePersistedLoot()
+    {
+        // Arrange a first delivery, then the removal of the loot table.
+        SeededEnemy seeded = await SeedAsync(heroCount: 1);
+        GrantEnemyLootRequest request = CreateRequest(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            seeded.LootTableId,
+            CombatResult.Won,
+            seeded.Heroes[0]
+        );
+        EnemyLootReply first = await GrantAsync(request);
+        await using (AsyncServiceScope scope = Fixture.Services.CreateAsyncScope())
+        {
+            RewardDbContext dbContext = scope.ServiceProvider.GetRequiredService<RewardDbContext>();
+            await dbContext
+                .LootTables.Where(table => table.Id == seeded.LootTableId)
+                .ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+        }
+
+        // Act
+        EnemyLootReply replay = await GrantAsync(request);
+
+        // Assert
+        HeroEnemyLoot replayedLoot = replay.HeroLoots.Should().ContainSingle().Subject;
+        replayedLoot.AlreadyGranted.Should().BeTrue();
+        replayedLoot.RewardId.Should().Be(first.HeroLoots[0].RewardId);
     }
 
     [Fact]
@@ -291,7 +362,7 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
     }
 
     // Seeds the catalogue, reward sources, a monster loot table drawing two items from two
-    // catalogue items, and one inventory per hero.
+    // catalogue items, and one inventory per hero. The first hero inventory can be full.
     private async Task<SeededEnemy> SeedAsync(
         int heroCount,
         string lootTableSource = "MONSTER",
@@ -355,15 +426,18 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
             .Select(_ => new SeededHero(Guid.NewGuid(), Guid.NewGuid(), ParticipantStatus.Active))
             .ToList();
         List<InventoryEntity> inventories = heroes
-            .Select(hero => new InventoryEntity
-            {
-                Id = Guid.NewGuid(),
-                HeroId = hero.HeroId,
-                ItemCapacity = fillInventory ? 1 : 40,
-                PotionCapacity = 20,
-                CreatedAt = now,
-                UpdatedAt = now,
-            })
+            .Select(
+                (hero, index) =>
+                    new InventoryEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        HeroId = hero.HeroId,
+                        ItemCapacity = fillInventory && index == 0 ? 1 : 40,
+                        PotionCapacity = 20,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                    }
+            )
             .ToList();
 
         await using AsyncServiceScope scope = Fixture.Services.CreateAsyncScope();
@@ -377,17 +451,17 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
         dbContext.Inventories.AddRange(inventories);
         if (fillInventory)
         {
-            dbContext.ItemInstances.AddRange(
-                inventories.Select(inventory => new ItemInstance
+            dbContext.ItemInstances.Add(
+                new ItemInstance
                 {
                     Id = Guid.NewGuid(),
                     Item = sword,
-                    Inventory = inventory,
+                    Inventory = inventories[0],
                     Status = ItemInstanceStatus.Available,
                     Quantity = 1,
                     CreatedAt = now,
                     UpdatedAt = now,
-                })
+                }
             );
         }
 

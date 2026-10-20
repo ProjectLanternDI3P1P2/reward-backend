@@ -62,6 +62,9 @@ public sealed class EnemyLootGrpcService(ISender sender)
     private static EnemyLootReply ToReply(GrantEnemyLootResult result)
     {
         var reply = new EnemyLootReply { EnemyId = result.EnemyId.ToString() };
+        reply.FullInventoryHeroIds.AddRange(
+            result.FullInventoryHeroIds.Select(id => id.ToString())
+        );
         reply.HeroLoots.AddRange(
             result.HeroLoots.Select(heroLoot =>
             {

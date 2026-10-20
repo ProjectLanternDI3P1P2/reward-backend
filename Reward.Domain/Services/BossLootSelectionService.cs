@@ -10,8 +10,7 @@ namespace Reward.Domain.Services;
 /// </summary>
 public sealed class BossLootSelectionService(LootSelectionService lootSelection)
 {
-    // Ranks follow the rarity catalogue: 1 = Common, 2 = Uncommon, 3 = Rare, and so on.
-    private static readonly int MinimumGuaranteedRank = (int)ItemRarity.Rare + 1;
+    private static readonly int MinimumGuaranteedRank = ItemRarity.Rare.ToRank();
 
     /// <summary>Draws the boss loot and guarantees one high-rarity equipment item in it.</summary>
     public IReadOnlyList<SelectedLootItem> Select(LootTable table)

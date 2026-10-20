@@ -54,6 +54,9 @@ message EnemyLootReply {
   string enemy_id = 1;
   // Empty when the combat was not won or when no participant is eligible.
   repeated HeroEnemyLoot hero_loots = 2;
+  // Heroes whose inventory cannot hold all of their loot. They receive nothing and the
+  // other heroes are not affected; the same request can be sent again once they have room.
+  repeated string full_inventory_hero_ids = 3;
 }
 
 message HeroEnemyLoot {
