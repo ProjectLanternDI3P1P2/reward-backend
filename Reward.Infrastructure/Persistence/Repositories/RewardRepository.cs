@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Reward.Domain.Entities;
+using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
 using RewardEntity = Reward.Domain.Entities.Reward;
 
@@ -32,6 +33,23 @@ public sealed class RewardRepository(RewardDbContext dbContext) : IRewardReposit
             cancellationToken
         );
     }
+
+    public async Task<IReadOnlyList<RewardEntity>> GetGroupRewardsByRunAsync(
+        Guid runId,
+        CancellationToken cancellationToken
+    ) =>
+        await dbContext
+            .Rewards.AsNoTracking()
+            .Include(reward => reward.RewardSource)
+            .Include(reward => reward.Items)
+            .Where(reward =>
+                reward.RunId == runId
+                && reward.Status == RewardStatus.Applied
+                && reward.Distribution != RewardDistribution.Individual
+                && reward.CauseId != null
+            )
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
 
     public void Add(RewardEntity reward) => dbContext.Rewards.Add(reward);
 }

@@ -38,6 +38,24 @@ public static class EnumCodeExtensions
     public static bool IsConsumable(this ItemCategory category) =>
         category is ItemCategory.Potion or ItemCategory.Vial;
 
+    public static string ToCode(this RewardDistribution distribution) =>
+        distribution switch
+        {
+            RewardDistribution.Individual => "INDIVIDUAL",
+            RewardDistribution.Unique => "UNIQUE",
+            RewardDistribution.SharedPerParticipant => "SHARED_PER_PARTICIPANT",
+            _ => throw new ArgumentOutOfRangeException(nameof(distribution), distribution, null),
+        };
+
+    public static RewardDistribution ToRewardDistribution(this string code) =>
+        code.ToUpperInvariant() switch
+        {
+            "INDIVIDUAL" => RewardDistribution.Individual,
+            "UNIQUE" => RewardDistribution.Unique,
+            "SHARED_PER_PARTICIPANT" => RewardDistribution.SharedPerParticipant,
+            _ => throw new InvalidOperationException($"Unknown reward distribution '{code}'."),
+        };
+
     public static string ToCode(this EquipmentSlotName slot) =>
         slot switch
         {
