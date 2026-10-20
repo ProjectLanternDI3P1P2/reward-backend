@@ -1,5 +1,7 @@
+# syntax=docker/dockerfile:1.10
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+COPY NuGet.config ./
 
 COPY Reward.Presentation.slnx ./
 COPY Reward.Contracts/Reward.Contracts.csproj Reward.Contracts/
@@ -9,7 +11,8 @@ COPY Reward.Infrastructure/Reward.Infrastructure.csproj Reward.Infrastructure/
 COPY Reward.Presentation/Reward.Presentation.csproj Reward.Presentation/
 COPY Reward.Test/Reward.Test.csproj Reward.Test/
 
-RUN dotnet restore Reward.Presentation.slnx
+RUN --mount=type=secret,id=github_packages_credentials,env=NuGetPackageSourceCredentials_github \
+    dotnet restore Reward.Presentation.slnx
 
 COPY . .
 RUN dotnet publish Reward.Presentation/Reward.Presentation.csproj \

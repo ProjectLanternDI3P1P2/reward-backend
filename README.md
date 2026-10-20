@@ -1,5 +1,8 @@
 # .NET Backend Service Template
 
+Deployment parameters and target service communications are documented in
+[deployment configuration](docs/deployment-configuration.md).
+
 Starting point for a backend microservice: a .NET 10 Clean Architecture solution,
 the CI pipeline that guards it, and the branching flow that releases it.
 
@@ -30,6 +33,19 @@ dotnet build Reward.Presentation.slnx
 dotnet test --solution Reward.Presentation.slnx
 dotnet run --project Reward.Presentation/Reward.Presentation.csproj
 ```
+
+## Private NuGet packages
+
+When a restore needs a private `*.Contracts` package from GitHub Packages, define
+these credentials in the current PowerShell session before `dotnet restore` or
+`dotnet run`:
+
+```powershell
+$env:NuGetPackageSourceCredentials_github = "Username=<github-login>;Password=<personal-access-token>;ValidAuthenticationTypes=Basic"
+```
+
+The token needs the `read:packages` scope. The `github` suffix matches the source
+name in `NuGet.config`; never commit the token or add it to a tracked `.env` file.
 
 ### Tests
 
