@@ -80,22 +80,14 @@ public sealed class BossLootSelectionService(LootSelectionService lootSelection)
 
     // Equipment is any known category that is not a consumable. A category outside the known
     // ones is managed from the catalogue only and carries no equipment rule.
-    private static bool IsEquipment(Item item)
-    {
-        foreach (ItemCategory category in Enum.GetValues<ItemCategory>())
-        {
-            if (
+    private static bool IsEquipment(Item item) =>
+        Enum.GetValues<ItemCategory>()
+            .Where(category =>
                 string.Equals(
                     category.ToCode(),
                     item.Category?.Label,
                     StringComparison.OrdinalIgnoreCase
                 )
             )
-            {
-                return !category.IsConsumable();
-            }
-        }
-
-        return false;
-    }
+            .Any(category => !category.IsConsumable());
 }

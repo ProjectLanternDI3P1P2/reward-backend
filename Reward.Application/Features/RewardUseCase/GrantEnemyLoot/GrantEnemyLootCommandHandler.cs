@@ -49,19 +49,19 @@ public sealed class GrantEnemyLootCommandHandler(
         // loot table was changed or removed since the first delivery.
         var heroLoots = new List<GrantedHeroLoot>();
         var pendingHeroIds = new List<Guid>();
-        foreach (ActivityParticipant recipient in recipients)
+        foreach (Guid heroId in recipients.Select(recipient => recipient.HeroId))
         {
             RewardEntity? existing = await rewardRepository.GetByKeyAsync(
-                RewardEntity.CreateKey(request.EnemyType, request.EnemyId, recipient.HeroId),
+                RewardEntity.CreateKey(request.EnemyType, request.EnemyId, heroId),
                 cancellationToken
             );
             if (existing is null)
             {
-                pendingHeroIds.Add(recipient.HeroId);
+                pendingHeroIds.Add(heroId);
             }
             else
             {
-                heroLoots.Add(AcknowledgeDuplicate(existing, request, recipient.HeroId));
+                heroLoots.Add(AcknowledgeDuplicate(existing, request, heroId));
             }
         }
 

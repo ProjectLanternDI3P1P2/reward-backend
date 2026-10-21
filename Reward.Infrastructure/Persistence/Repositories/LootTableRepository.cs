@@ -11,12 +11,10 @@ public sealed class LootTableRepository(RewardDbContext dbContext) : ILootTableR
             .LootTables.AsSplitQuery()
             .Include(table => table.RarityRules)
                 .ThenInclude(rule => rule.Entries)
-                    .ThenInclude(entry => entry.Item)
-                        .ThenInclude(item => item.Rarity)
+                    .ThenInclude(entry => entry.Item.Rarity)
             // The inventory checks the category of every item it receives.
             .Include(table => table.RarityRules)
                 .ThenInclude(rule => rule.Entries)
-                    .ThenInclude(entry => entry.Item)
-                        .ThenInclude(item => item.Category)
+                    .ThenInclude(entry => entry.Item.Category)
             .SingleOrDefaultAsync(table => table.Id == lootTableId, cancellationToken);
 }
