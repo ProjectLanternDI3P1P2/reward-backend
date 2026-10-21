@@ -8,5 +8,6 @@ public sealed record GenerateChestLootCommand(
     Guid DungeonRunId,
     Guid ChestId,
     int Floor,
-    string Difficulty
+    string Difficulty,
+    int? ChestElementId = null
 ) : ICommand<GenerateChestLootResult>;

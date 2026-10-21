@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Reward.Domain.Exceptions;
 using ILogger = Serilog.ILogger;
 
 namespace Reward.Presentation.Middleware;
@@ -7,6 +8,8 @@ namespace Reward.Presentation.Middleware;
 public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment environment)
     : IMiddleware
 {
+    private const string ProblemDetailsContentType = "application/problem+json";
+
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try
@@ -23,6 +26,16 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             logger.Warning(exception, "Validation error occurred");
             await HandleValidationExceptionAsync(context, exception);
         }
+        catch (LootTableNotFoundException exception)
+        {
+            logger.Warning(exception, "Chest loot table not found");
+            await HandleNotFoundExceptionAsync(context, exception);
+        }
+        catch (InvalidLootTableException exception)
+        {
+            logger.Warning(exception, "Chest loot table is invalid");
+            await HandleConflictExceptionAsync(context, exception);
+        }
         catch (InvalidOperationException exception)
         {
             logger.Warning(exception, "Business conflict occurred");
@@ -35,10 +48,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         }
     }
 
-    private static async Task HandleConflictExceptionAsync(
-        HttpContext context,
-        InvalidOperationException exception
-    )
+    private static async Task HandleConflictExceptionAsync(HttpContext context, Exception exception)
     {
         var problemDetails = new ProblemDetails
         {
@@ -50,14 +60,11 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status409Conflict;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
-    private static async Task HandleNotFoundExceptionAsync(
-        HttpContext context,
-        KeyNotFoundException exception
-    )
+    private static async Task HandleNotFoundExceptionAsync(HttpContext context, Exception exception)
     {
         var problemDetails = new ProblemDetails
         {
@@ -69,7 +76,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status404NotFound;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
@@ -95,7 +102,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 
@@ -121,7 +128,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = ProblemDetailsContentType;
         await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
     }
 }
