@@ -39,3 +39,6 @@ jobs:
         env:
           REWARD_TEST_DATABASE_CONNECTION: Host=localhost;Port=5432;Database=reward_test;Username=reward
         run: dotnet test --solution Reward.Presentation.slnx
+
+      - name: Verify production migration command against disposable PostgreSQL
+        run: bash .github/scripts/test-migration-command.sh
