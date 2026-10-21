@@ -1,0 +1,123 @@
+name: CD - Publish Docker image
+
+# CD is deliberately separate from CI so its runs are visible in Actions. Branch
+# protection requires CI before code can reach main; CD then publishes that merged
+# commit. Application release tags add an immutable version tag to Docker Hub.
+# contracts-v* tags publish NuGet contracts only.
+on:
+  push:
+    branches:
+      - main
+      # Enable this line with the dev environment. It will publish :dev and
+      # :dev-<sha> in the same Docker Hub repository, not a second repository.
+      # - dev
+    tags: ["v*"]
+  workflow_dispatch:
+
+# A newer branch commit supersedes a queued older one, so a floating
+# branch tag (:main, and later :dev) cannot be overwritten by stale code.
+# Release-tag runs are preserved.
+concurrency:
+  group: cd-docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: diiagerewardimage/reward-image
+
+permissions: {}
+
+jobs:
+  publish:
+    name: Publish Docker image
+    # The workflow never runs from a pull request. Manual runs are kept to main
+    # as well, so Docker Hub credentials cannot publish an arbitrary branch.
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Compute image tags
+        id: image
+        shell: bash
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          DELIVERY_BRANCH: ${{ github.ref_name }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          short_sha="$(git rev-parse --short=7 HEAD)"
+
+          if [ "$REF_TYPE" = "tag" ]; then
+            # Release Please creates vX.Y.Z after the release pull request is merged.
+            tags="${IMAGE}:${RELEASE_TAG}"
+            source="release tag ${RELEASE_TAG}"
+          else
+            # With the commented dev trigger enabled, this automatically becomes
+            # :dev and :dev-<sha>; both are tags in this one private repository.
+            tags="${IMAGE}:${DELIVERY_BRANCH}"
+            tags+=$'\n'"${IMAGE}:${DELIVERY_BRANCH}-${short_sha}"
+            source="${DELIVERY_BRANCH} commit ${short_sha}"
+          fi
+
+          {
+            echo "sha=${sha}"
+            echo "source=${source}"
+            echo "tags<<EOF"
+            echo "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.image.outputs.sha }}
+
+      - name: Verify published image
+        shell: bash
+        env:
+          TAGS: ${{ steps.image.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            docker buildx imagetools inspect "$tag" > /dev/null
+            echo "Verified $tag"
+          done <<< "$TAGS"
+
+      - name: Write delivery summary
+        shell: bash
+        env:
+          SOURCE: ${{ steps.image.outputs.source }}
+          TAGS: ${{ steps.image.outputs.tags }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            echo "## Docker image published"
+            echo
+            echo "- Source: ${SOURCE}"
+            echo "- Digest: \`${DIGEST}\`"
+            echo "- Tags:"
+            while IFS= read -r tag; do
+              echo "  - \`${tag}\`"
+            done <<< "$TAGS"
+          } >> "$GITHUB_STEP_SUMMARY"
