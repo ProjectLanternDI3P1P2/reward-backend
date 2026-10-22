@@ -1,4 +1,5 @@
 using MediatR;
+using Reward.Application.Messaging;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
@@ -42,6 +43,16 @@ public sealed class ClaimChestContentsCommandHandler(
         // owner, so a reward that already has a hero means the chest is empty.
         if (reward.HeroId != Guid.Empty)
         {
+            chestLootRepository.AddOutboxMessage(
+                ChestLootOutboxMessages.CreateClaimLog(
+                    request.HeroId,
+                    request.DungeonRunId,
+                    request.ChestId,
+                    "ALREADY_EMPTY",
+                    0,
+                    clock.UtcNow
+                )
+            );
             return new ClaimChestContentsResult(
                 request.ChestId,
                 ChestState.Empty.ToCode(),
@@ -88,6 +99,17 @@ public sealed class ClaimChestContentsCommandHandler(
         }
 
         reward.HeroId = request.HeroId;
+
+        chestLootRepository.AddOutboxMessage(
+            ChestLootOutboxMessages.CreateClaimLog(
+                request.HeroId,
+                request.DungeonRunId,
+                request.ChestId,
+                "CLAIMED",
+                itemInstances.Count,
+                now
+            )
+        );
 
         return new ClaimChestContentsResult(
             request.ChestId,

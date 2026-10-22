@@ -11,4 +11,5 @@ public sealed class RabbitMqOptions
     public string UserName { get; init; } = "guest";
     public string Password { get; init; } = "guest";
     public string ExchangeName { get; init; } = "reward.events";
+    public string? ChestRoutingQueueName { get; init; }
 }

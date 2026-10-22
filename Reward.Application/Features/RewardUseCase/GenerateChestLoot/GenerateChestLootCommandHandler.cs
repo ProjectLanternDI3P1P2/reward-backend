@@ -140,6 +140,9 @@ public sealed class GenerateChestLootCommandHandler(
             generation.Floor,
             generation.Difficulty,
             alreadyGenerated,
+            (
+                generation.Reward.HeroId == Guid.Empty ? ChestState.Filled : ChestState.Empty
+            ).ToCode(),
             generation
                 .Reward.Items.OrderBy(item => item.ItemId)
                 .Select(item => new GeneratedChestLootItem(
