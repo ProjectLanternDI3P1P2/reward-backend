@@ -10,6 +10,7 @@ public static class ChestLootOutboxMessages
 {
     public const string GeneratedEventType = "rewards.chest-loot-generated";
     public const string GenerationLogType = "logs.reward.chest-loot-generation";
+    public const string ClaimLogType = "logs.reward.chest-loot-claim";
 
     /// <summary>Creates the first-generation business event.</summary>
     public static OutboxMessage CreateGeneratedEvent(
@@ -95,6 +96,28 @@ public static class ChestLootOutboxMessages
             ? commandId.ToString()
             : Guid.NewGuid().ToString();
         return Create(correlationId, GenerationLogType, occurredAt, payload.ToByteArray());
+    }
+
+    /// <summary>Creates a structured claim log for a transactional or refused claim outcome.</summary>
+    public static OutboxMessage CreateClaimLog(
+        Guid heroId,
+        Guid dungeonRunId,
+        Guid chestId,
+        string outcome,
+        int transferredItemCount,
+        DateTimeOffset occurredAt
+    )
+    {
+        var payload = new ChestLootClaimLog
+        {
+            HeroId = heroId.ToString(),
+            DungeonRunId = dungeonRunId.ToString(),
+            ChestId = chestId.ToString(),
+            Outcome = outcome,
+            TransferredItemCount = transferredItemCount,
+        };
+
+        return Create(chestId.ToString(), ClaimLogType, occurredAt, payload.ToByteArray());
     }
 
     private static OutboxMessage Create(

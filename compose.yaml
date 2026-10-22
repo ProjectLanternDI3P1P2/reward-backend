@@ -34,6 +34,7 @@ services:
       RabbitMq__HostName: rabbitmq
       RabbitMq__UserName: reward
       RabbitMq__Password: reward
+      RabbitMq__ChestRoutingQueueName: rewards.chest-events.v1
     ports:
       - "8080:8080"
       # Internal gRPC endpoint. Do not expose this port in production Kubernetes ingress.

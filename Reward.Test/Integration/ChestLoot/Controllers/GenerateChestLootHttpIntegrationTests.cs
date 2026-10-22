@@ -49,6 +49,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().NotBeNull();
         result!.ChestId.Should().Be(ChestLootIdentity.Create(runId, 1, 17));
+        result.State.Should().Be("FILLED");
         result.LootTableId.Should().Be(normal.LootTableId);
         result.Difficulty.Should().Be("NORMAL");
         result.Items.Should().ContainSingle().Which.ItemId.Should().Be(normal.ItemId);
@@ -155,6 +156,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
 
         // Assert explicit zero is distinct from an absent value and derives its normal identity.
         result.AlreadyGenerated.Should().BeFalse();
+        result.State.Should().Be("FILLED");
         result.ChestId.Should().Be(ChestLootIdentity.Create(runId, 1, 0));
     }
 
@@ -194,6 +196,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
 
         // Assert the stored response wins over all mutable catalogue values.
         replay.AlreadyGenerated.Should().BeTrue();
+        replay.State.Should().Be("FILLED");
         replay.RewardId.Should().Be(first.RewardId);
         replay.Items.Should().BeEquivalentTo(first.Items);
         replay.Items.Single().Name.Should().NotBe("Changed after generation");
@@ -220,6 +223,96 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
             .Select(payload => ChestLootGenerationLog.Parser.ParseFrom(payload).Outcome)
             .ToList();
         outcomes.Should().BeEquivalentTo("GENERATED", "REPLAYED");
+    }
+
+    [Fact]
+    public async Task Generate_ReplayTracksClaimStateWithoutRerollOrDuplicateEvent()
+    {
+        // Arrange one full potion inventory and generate immutable loot through HTTP.
+        SeededContext seeded = await SeedContextAsync(1, "NORMAL", includeInventory: true);
+        seeded.HeroId.Should().HaveValue();
+        Guid heroId = seeded.HeroId!.Value;
+        Guid runId = Guid.NewGuid();
+        const int chestElementId = 8;
+        GenerateChestLootRequest request = CreateRequest(
+            Guid.NewGuid(),
+            runId,
+            chestElementId,
+            1,
+            "NORMAL"
+        );
+        using HttpClient client = fixture.CreateHttpClient();
+        GenerateChestLootResult generated = await PostSuccessAsync(client, request);
+        generated.State.Should().Be("FILLED");
+        await using (AsyncServiceScope fullScope = fixture.Services.CreateAsyncScope())
+        {
+            RewardDbContext context =
+                fullScope.ServiceProvider.GetRequiredService<RewardDbContext>();
+            InventoryEntity inventory = await context.Inventories.SingleAsync(
+                value => value.HeroId == heroId,
+                TestContext.Current.CancellationToken
+            );
+            inventory.PotionCapacity = 1;
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        // Act and assert refusal leaves the persisted loot filled and byte-for-byte unchanged.
+        HttpResponseMessage refused = await client.PostAsync(
+            $"/api/v1/heroes/{heroId}/runs/{runId}/chests/{generated.ChestId}/claim",
+            content: null,
+            TestContext.Current.CancellationToken
+        );
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        GenerateChestLootResult afterRefusal = await PostSuccessAsync(
+            client,
+            request with
+            {
+                CommandId = Guid.NewGuid(),
+            }
+        );
+        afterRefusal.State.Should().Be("FILLED");
+        afterRefusal.Items.Should().BeEquivalentTo(generated.Items);
+
+        // Free the potion slot, claim the original loot and reopen the same generated chest.
+        await using (AsyncServiceScope freeScope = fixture.Services.CreateAsyncScope())
+        {
+            RewardDbContext context =
+                freeScope.ServiceProvider.GetRequiredService<RewardDbContext>();
+            ItemInstance occupyingItem = await context.ItemInstances.SingleAsync(
+                TestContext.Current.CancellationToken
+            );
+            context.ItemInstances.Remove(occupyingItem);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        HttpResponseMessage claimed = await client.PostAsync(
+            $"/api/v1/heroes/{heroId}/runs/{runId}/chests/{generated.ChestId}/claim",
+            content: null,
+            TestContext.Current.CancellationToken
+        );
+        claimed.StatusCode.Should().Be(HttpStatusCode.OK);
+        GenerateChestLootResult afterClaim = await PostSuccessAsync(
+            client,
+            request with
+            {
+                CommandId = Guid.NewGuid(),
+            }
+        );
+        afterClaim.State.Should().Be("EMPTY");
+        afterClaim.Items.Should().BeEquivalentTo(generated.Items);
+
+        // Reopening only writes replay logs; it never rerolls nor duplicates generation events.
+        await using AsyncServiceScope assertScope = fixture.Services.CreateAsyncScope();
+        RewardDbContext dbContext =
+            assertScope.ServiceProvider.GetRequiredService<RewardDbContext>();
+        (
+            await dbContext.OutboxMessages.CountAsync(
+                message => message.Type == ChestLootOutboxMessages.GeneratedEventType,
+                TestContext.Current.CancellationToken
+            )
+        )
+            .Should()
+            .Be(1);
+        (await dbContext.Rewards.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
     }
 
     [Fact]
@@ -562,7 +655,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
             );
         }
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-        return new SeededContext(table.Id, item.Id);
+        return new SeededContext(table.Id, item.Id, inventory?.HeroId);
     }
 
     private static async Task<GenerateChestLootResult> PostSuccessAsync(
@@ -638,7 +731,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
             ))
             .ToListAsync(TestContext.Current.CancellationToken);
 
-    private sealed record SeededContext(Guid LootTableId, Guid ItemId);
+    private sealed record SeededContext(Guid LootTableId, Guid ItemId, Guid? HeroId);
 
     private sealed record InventoryItemState(
         Guid Id,

@@ -47,6 +47,35 @@ public sealed class RabbitMqMessagePublisher(
             cancellationToken: cancellationToken
         );
 
+        // Local Compose may opt into a Reward-owned durable route. Production leaves this unset
+        // and lets each downstream consumer bind its own queue.
+        if (!string.IsNullOrWhiteSpace(settings.ChestRoutingQueueName))
+        {
+            await channel.QueueDeclareAsync(
+                settings.ChestRoutingQueueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                cancellationToken: cancellationToken
+            );
+            foreach (
+                string routingKey in new[]
+                {
+                    $"{ChestLootOutboxMessages.GeneratedEventType}.v1",
+                    $"{ChestLootOutboxMessages.GenerationLogType}.v1",
+                    $"{ChestLootOutboxMessages.ClaimLogType}.v1",
+                }
+            )
+            {
+                await channel.QueueBindAsync(
+                    settings.ChestRoutingQueueName,
+                    settings.ExchangeName,
+                    routingKey,
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+
         // Serialize the transport-neutral envelope defined in the public event contract.
         MessageEnvelopeMessage envelope = new()
         {

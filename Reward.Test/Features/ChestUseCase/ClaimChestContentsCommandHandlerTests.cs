@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Moq;
 using Reward.Application.Features.ChestUseCase.ClaimChestContents;
+using Reward.Application.Messaging;
+using Reward.Contracts.Events.V1;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
 using Reward.Domain.Repositories;
@@ -18,6 +20,14 @@ public sealed class ClaimChestContentsCommandHandlerTests
     private readonly Guid chestId = Guid.NewGuid();
     private readonly Mock<IChestLootRepository> chestLootRepository = new();
     private readonly Mock<IInventoryRepository> inventoryRepository = new();
+    private readonly List<OutboxMessage> outbox = [];
+
+    public ClaimChestContentsCommandHandlerTests()
+    {
+        chestLootRepository
+            .Setup(repository => repository.AddOutboxMessage(It.IsAny<OutboxMessage>()))
+            .Callback<OutboxMessage>(outbox.Add);
+    }
 
     [Fact]
     public async Task Handle_FilledChestAndEnoughCapacity_TransfersEveryRewardToTheInventory()
@@ -61,6 +71,7 @@ public sealed class ClaimChestContentsCommandHandlerTests
                 ),
             Times.Once
         );
+        AssertClaimLog("CLAIMED", 2);
     }
 
     [Fact]
@@ -134,6 +145,7 @@ public sealed class ClaimChestContentsCommandHandlerTests
                 ),
             Times.Never
         );
+        AssertClaimLog("ALREADY_EMPTY", 0);
         inventoryRepository.Verify(
             repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
             Times.Never
@@ -227,6 +239,7 @@ public sealed class ClaimChestContentsCommandHandlerTests
             repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
             Times.Never
         );
+        outbox.Should().BeEmpty();
     }
 
     [Fact]
@@ -253,6 +266,18 @@ public sealed class ClaimChestContentsCommandHandlerTests
 
     private ClaimChestContentsCommandHandler CreateHandler() =>
         new(chestLootRepository.Object, inventoryRepository.Object, new FixedClock());
+
+    private void AssertClaimLog(string outcome, int transferredItemCount)
+    {
+        OutboxMessage message = outbox.Should().ContainSingle().Subject;
+        message.Type.Should().Be(ChestLootOutboxMessages.ClaimLogType);
+        ChestLootClaimLog payload = ChestLootClaimLog.Parser.ParseFrom(message.Payload);
+        payload.HeroId.Should().Be(heroId.ToString());
+        payload.DungeonRunId.Should().Be(dungeonRunId.ToString());
+        payload.ChestId.Should().Be(chestId.ToString());
+        payload.Outcome.Should().Be(outcome);
+        payload.TransferredItemCount.Should().Be(transferredItemCount);
+    }
 
     private ClaimChestContentsCommand CreateCommand() => new(heroId, dungeonRunId, chestId);
 

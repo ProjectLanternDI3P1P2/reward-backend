@@ -57,3 +57,13 @@ message ChestLootGenerationLog {
   int32 item_count = 10;
   string reason = 11;
 }
+
+// Structured claim log. It is separate from generation so claiming never
+// re-emits or changes the immutable chest generation event.
+message ChestLootClaimLog {
+  string hero_id = 1;
+  string dungeon_run_id = 2;
+  string chest_id = 3;
+  string outcome = 4;
+  int32 transferred_item_count = 5;
+}

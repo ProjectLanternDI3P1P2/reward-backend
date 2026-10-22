@@ -62,6 +62,7 @@ public sealed class GenerateChestLootCommandHandlerTests
 
         // Assert generation retains its exact table and aggregated reward graph.
         result.AlreadyGenerated.Should().BeFalse();
+        result.State.Should().Be("FILLED");
         result.LootTableId.Should().Be(table.Id);
         addedGeneration.Should().NotBeNull();
         addedGeneration!.LootTableId.Should().Be(table.Id);
@@ -91,6 +92,7 @@ public sealed class GenerateChestLootCommandHandlerTests
         Guid runId = Guid.NewGuid();
         Guid chestId = Guid.NewGuid();
         ChestLootGeneration existing = CreateGeneration(runId, chestId);
+        existing.Reward.HeroId = Guid.NewGuid();
         var outbox = new List<OutboxMessage>();
         var repository = new Mock<IChestLootRepository>();
         repository
@@ -118,6 +120,7 @@ public sealed class GenerateChestLootCommandHandlerTests
 
         // Assert replay returns the original persisted context and never reads a current table.
         result.AlreadyGenerated.Should().BeTrue();
+        result.State.Should().Be("EMPTY");
         result.Floor.Should().Be(1);
         result.Difficulty.Should().Be("NORMAL");
         result.LootTableId.Should().Be(existing.LootTableId);
