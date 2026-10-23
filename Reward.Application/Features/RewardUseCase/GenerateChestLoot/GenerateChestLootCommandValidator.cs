@@ -11,13 +11,12 @@ public sealed class GenerateChestLootCommandValidator : AbstractValidator<Genera
         RuleFor(command => command.CommandId).NotEmpty();
         RuleFor(command => command.DungeonRunId).NotEmpty();
         RuleFor(command => command.ChestId).NotEmpty();
-
         // Keep the lookup context inside the supported persisted shape.
         RuleFor(command => command.Floor).GreaterThan(0);
         RuleFor(command => command.Difficulty)
             .NotEmpty()
             .MaximumLength(50)
-            .Matches("^[A-Z][A-Z0-9_]*$")
-            .WithMessage("difficulty must contain only uppercase letters, digits or underscores.");
+            .Must(difficulty => difficulty is "NORMAL" or "HARD")
+            .WithMessage("difficulty must be either NORMAL or HARD.");
     }
 }

@@ -3,8 +3,5 @@ services:
     extends: { file: compose.yaml, service: postgres }
   rabbitmq:
     extends: { file: compose.yaml, service: rabbitmq }
-  api:
-    extends: { file: compose.yaml, service: api }
-    build: { context: ., dockerfile: Dockerfile.dev }
 volumes:
   postgres-data:
