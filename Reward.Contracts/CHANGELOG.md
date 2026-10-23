@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/contracts-v3.0.0...contracts-v4.0.0) (2026-10-23)
+
+
+### Added
+
+* **reward:** grant enemy loot and guarantee a high-rarity item from bosses ([2103143](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/21031438756afd40ce705ac0d69c497b3d530856))
+
 ## [3.0.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/contracts-v2.0.0...contracts-v3.0.0) (2026-10-20)
 
 
