@@ -88,6 +88,9 @@ public sealed class AwardUniqueGroupRewardCommandHandlerTests
                 repository.Add(
                     It.Is<RewardEntity>(reward =>
                         reward.HeroId == second.HeroId
+                        && reward.Distribution == RewardDistribution.Unique
+                        && reward.CauseId == causeId
+                        && reward.RecipientPlayerId == second.PlayerId
                         && reward.Status == RewardStatus.Applied
                         && reward.RewardKey == $"BOSS:{causeId}:UNIQUE:{legendarySword.Id}"
                         && reward.Items.Single().ItemNameSnapshot == "Legendary Sword"

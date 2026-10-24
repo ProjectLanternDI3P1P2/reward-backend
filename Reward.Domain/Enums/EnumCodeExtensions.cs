@@ -20,6 +20,26 @@ public static class EnumCodeExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(category), category, null),
         };
 
+    public static string ToCode(this EquipmentSlotName slot) =>
+        slot switch
+        {
+            EquipmentSlotName.RightHand => "RIGHT_HAND",
+            EquipmentSlotName.LeftHand => "LEFT_HAND",
+            EquipmentSlotName.Body => "BODY",
+            EquipmentSlotName.Jewelry1 => "JEWELRY_1",
+            EquipmentSlotName.Jewelry2 => "JEWELRY_2",
+            _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null),
+        };
+
+    public static string ToCode(this RewardDistribution distribution) =>
+        distribution switch
+        {
+            RewardDistribution.Individual => "INDIVIDUAL",
+            RewardDistribution.Unique => "UNIQUE",
+            RewardDistribution.SharedPerParticipant => "SHARED_PER_PARTICIPANT",
+            _ => throw new ArgumentOutOfRangeException(nameof(distribution), distribution, null),
+        };
+
     public static ItemCategory ToItemCategory(this string code) =>
         code.ToUpperInvariant() switch
         {
@@ -35,17 +55,15 @@ public static class EnumCodeExtensions
             _ => throw new InvalidOperationException($"Unknown item category '{code}'."),
         };
 
+    public static RewardDistribution ToRewardDistribution(this string code) =>
+        code.ToUpperInvariant() switch
+        {
+            "INDIVIDUAL" => RewardDistribution.Individual,
+            "UNIQUE" => RewardDistribution.Unique,
+            "SHARED_PER_PARTICIPANT" => RewardDistribution.SharedPerParticipant,
+            _ => throw new InvalidOperationException($"Unknown reward distribution '{code}'."),
+        };
+
     public static bool IsConsumable(this ItemCategory category) =>
         category is ItemCategory.Potion or ItemCategory.Vial;
-
-    public static string ToCode(this EquipmentSlotName slot) =>
-        slot switch
-        {
-            EquipmentSlotName.RightHand => "RIGHT_HAND",
-            EquipmentSlotName.LeftHand => "LEFT_HAND",
-            EquipmentSlotName.Body => "BODY",
-            EquipmentSlotName.Jewelry1 => "JEWELRY_1",
-            EquipmentSlotName.Jewelry2 => "JEWELRY_2",
-            _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null),
-        };
 }
