@@ -27,7 +27,8 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         await SeedContextAsync(1, "HARD");
         Guid commandId = Guid.NewGuid();
         Guid runId = Guid.NewGuid();
-        GenerateChestLootRequest request = CreateRequest(commandId, runId, 17, 1, " normal ");
+        Guid chestId = Guid.NewGuid();
+        GenerateChestLootRequest request = CreateRequest(commandId, runId, chestId, 1, " normal ");
         await using AsyncServiceScope beforeScope = fixture.Services.CreateAsyncScope();
         RewardDbContext beforeContext =
             beforeScope.ServiceProvider.GetRequiredService<RewardDbContext>();
@@ -48,7 +49,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Assert the direct response exposes the exact persisted context and deterministic identity.
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().NotBeNull();
-        result!.ChestId.Should().Be(ChestLootIdentity.Create(runId, 1, 17));
+        result!.ChestId.Should().Be(chestId);
         result.LootTableId.Should().Be(normal.LootTableId);
         result.Difficulty.Should().Be("NORMAL");
         result.Items.Should().ContainSingle().Which.ItemId.Should().Be(normal.ItemId);
@@ -74,7 +75,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     [Theory]
     [InlineData("commandId")]
     [InlineData("dungeonRunId")]
-    [InlineData("chestElementId")]
+    [InlineData("chestId")]
     [InlineData("floor")]
     [InlineData("difficulty")]
     public async Task Generate_MissingRequiredProperty_ReturnsBadRequestWithoutGeneration(
@@ -87,7 +88,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         {
             ["commandId"] = Guid.NewGuid(),
             ["dungeonRunId"] = Guid.NewGuid(),
-            ["chestElementId"] = 0,
+            ["chestId"] = Guid.NewGuid(),
             ["floor"] = 1,
             ["difficulty"] = "NORMAL",
         };
@@ -110,7 +111,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     [Theory]
     [InlineData("commandId")]
     [InlineData("dungeonRunId")]
-    [InlineData("chestElementId")]
+    [InlineData("chestId")]
     [InlineData("floor")]
     [InlineData("difficulty")]
     public async Task Generate_NullRequiredProperty_RejectsWithoutGeneration(string nullProperty)
@@ -121,7 +122,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         {
             ["commandId"] = Guid.NewGuid(),
             ["dungeonRunId"] = Guid.NewGuid(),
-            ["chestElementId"] = 0,
+            ["chestId"] = Guid.NewGuid(),
             ["floor"] = 1,
             ["difficulty"] = "NORMAL",
         };
@@ -142,20 +143,27 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     }
 
     [Fact]
-    public async Task Generate_ZeroChestElementId_RemainsValid()
+    public async Task Generate_GuidChestId_RemainsValid()
     {
         // Arrange the boundary value that represents the first map element.
         await SeedContextAsync(1, "NORMAL");
         Guid runId = Guid.NewGuid();
-        GenerateChestLootRequest request = CreateRequest(Guid.NewGuid(), runId, 0, 1, "NORMAL");
+        Guid chestId = Guid.NewGuid();
+        GenerateChestLootRequest request = CreateRequest(
+            Guid.NewGuid(),
+            runId,
+            chestId,
+            1,
+            "NORMAL"
+        );
 
         // Act through normal JSON binding and generation.
         using HttpClient client = fixture.CreateHttpClient();
         GenerateChestLootResult result = await PostSuccessAsync(client, request);
 
-        // Assert explicit zero is distinct from an absent value and derives its normal identity.
+        // Assert the caller-provided GUID is preserved as the chest identity.
         result.AlreadyGenerated.Should().BeFalse();
-        result.ChestId.Should().Be(ChestLootIdentity.Create(runId, 1, 0));
+        result.ChestId.Should().Be(chestId);
     }
 
     [Fact]
@@ -164,7 +172,13 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Arrange and generate the chest once from its original live catalogue values.
         SeededContext seeded = await SeedContextAsync(1, "NORMAL");
         Guid runId = Guid.NewGuid();
-        GenerateChestLootRequest request = CreateRequest(Guid.NewGuid(), runId, 4, 1, "NORMAL");
+        GenerateChestLootRequest request = CreateRequest(
+            Guid.NewGuid(),
+            runId,
+            Guid.NewGuid(),
+            1,
+            "NORMAL"
+        );
         using HttpClient client = fixture.CreateHttpClient();
         GenerateChestLootResult first = await PostSuccessAsync(client, request);
 
@@ -232,7 +246,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         GenerateChestLootRequest firstRequest = CreateRequest(
             Guid.NewGuid(),
             runId,
-            3,
+            Guid.NewGuid(),
             1,
             "NORMAL"
         );
@@ -296,10 +310,10 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         Guid secondRun = Guid.NewGuid();
         GenerateChestLootRequest[] requests =
         [
-            CreateRequest(Guid.NewGuid(), firstRun, 1, 1, "NORMAL"),
-            CreateRequest(Guid.NewGuid(), firstRun, 2, 1, "NORMAL"),
-            CreateRequest(Guid.NewGuid(), firstRun, 1, 2, "NORMAL"),
-            CreateRequest(Guid.NewGuid(), secondRun, 1, 1, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), firstRun, Guid.NewGuid(), 1, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), firstRun, Guid.NewGuid(), 1, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), firstRun, Guid.NewGuid(), 2, "NORMAL"),
+            CreateRequest(Guid.NewGuid(), secondRun, Guid.NewGuid(), 1, "NORMAL"),
         ];
 
         // Act sequentially to isolate identity semantics from the concurrency test.
@@ -317,13 +331,28 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     }
 
     [Theory]
-    [InlineData(-1, 1, "NORMAL", HttpStatusCode.UnprocessableEntity)]
-    [InlineData(0, 0, "NORMAL", HttpStatusCode.UnprocessableEntity)]
-    [InlineData(0, -1, "NORMAL", HttpStatusCode.UnprocessableEntity)]
-    [InlineData(0, 1, "ELITE", HttpStatusCode.UnprocessableEntity)]
-    [InlineData(0, 4, "NORMAL", HttpStatusCode.NotFound)]
+    [InlineData("", 1, "NORMAL", HttpStatusCode.UnprocessableEntity)]
+    [InlineData(
+        "00000000-0000-0000-0000-000000000001",
+        0,
+        "NORMAL",
+        HttpStatusCode.UnprocessableEntity
+    )]
+    [InlineData(
+        "00000000-0000-0000-0000-000000000001",
+        -1,
+        "NORMAL",
+        HttpStatusCode.UnprocessableEntity
+    )]
+    [InlineData(
+        "00000000-0000-0000-0000-000000000001",
+        1,
+        "ELITE",
+        HttpStatusCode.UnprocessableEntity
+    )]
+    [InlineData("00000000-0000-0000-0000-000000000001", 4, "NORMAL", HttpStatusCode.NotFound)]
     public async Task Generate_InvalidOrMissingContext_IsAtomicAndWritesRejectedLog(
-        int chestElementId,
+        string chestId,
         int floor,
         string difficulty,
         HttpStatusCode expectedStatus
@@ -334,7 +363,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         GenerateChestLootRequest request = CreateRequest(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            chestElementId,
+            string.IsNullOrEmpty(chestId) ? Guid.Empty : Guid.Parse(chestId),
             floor,
             difficulty
         );
@@ -377,7 +406,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         GenerateChestLootRequest request = CreateRequest(
             emptyCommandId ? Guid.Empty : Guid.NewGuid(),
             emptyCommandId ? Guid.NewGuid() : Guid.Empty,
-            0,
+            Guid.NewGuid(),
             1,
             "NORMAL"
         );
@@ -403,7 +432,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         GenerateChestLootRequest request = CreateRequest(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            0,
+            Guid.NewGuid(),
             1,
             "NORMAL"
         );
@@ -586,7 +615,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     private static GenerateChestLootRequest CreateRequest(
         Guid commandId,
         Guid dungeonRunId,
-        int chestElementId,
+        Guid chestId,
         int floor,
         string difficulty
     ) =>
@@ -594,7 +623,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         {
             CommandId = commandId,
             DungeonRunId = dungeonRunId,
-            ChestElementId = chestElementId,
+            ChestId = chestId,
             Floor = floor,
             Difficulty = difficulty,
         };

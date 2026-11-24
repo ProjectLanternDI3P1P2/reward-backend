@@ -11,10 +11,6 @@ public sealed class GenerateChestLootCommandValidator : AbstractValidator<Genera
         RuleFor(command => command.CommandId).NotEmpty();
         RuleFor(command => command.DungeonRunId).NotEmpty();
         RuleFor(command => command.ChestId).NotEmpty();
-        RuleFor(command => command.ChestElementId)
-            .GreaterThanOrEqualTo(0)
-            .When(command => command.ChestElementId.HasValue);
-
         // Keep the lookup context inside the supported persisted shape.
         RuleFor(command => command.Floor).GreaterThan(0);
         RuleFor(command => command.Difficulty)
