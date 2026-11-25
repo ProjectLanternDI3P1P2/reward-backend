@@ -20,7 +20,7 @@ public sealed class GetRunRewardDistributionQueryHandler(
     {
         if (string.IsNullOrWhiteSpace(request.ExternalUserId))
         {
-            throw new UnauthenticatedException("The authenticated user identity is missing.");
+            throw new UnauthorizedException("The authenticated user identity is missing.");
         }
 
         // Only the participants of the run may see who received what. Anyone else gets the

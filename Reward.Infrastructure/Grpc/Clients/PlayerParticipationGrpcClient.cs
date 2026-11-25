@@ -1,8 +1,8 @@
 using Grpc.Core;
 using Microsoft.Extensions.Options;
+using Reward.Application.Exceptions;
 using Reward.Application.Ports;
 using Reward.Contracts.V1;
-using Reward.Domain.Exceptions;
 using Reward.Infrastructure.Grpc.Configuration;
 
 namespace Reward.Infrastructure.Grpc.Clients;
@@ -39,7 +39,7 @@ public sealed class PlayerParticipationGrpcClient(
         // as unavailable, never granted by default.
         catch (RpcException exception) when (exception.StatusCode != StatusCode.Cancelled)
         {
-            throw new DependencyUnavailableException("Player", exception);
+            throw new ExternalServiceUnavailableException("Player", exception);
         }
     }
 }

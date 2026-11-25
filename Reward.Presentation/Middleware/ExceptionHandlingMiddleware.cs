@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Reward.Application.Exceptions;
 using Reward.Domain.Exceptions;
 using ILogger = Serilog.ILogger;
 
@@ -15,7 +16,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         {
             await next(context);
         }
-        catch (UnauthenticatedException exception)
+        catch (UnauthorizedException exception)
         {
             logger.Warning(exception, "Request without a trusted user identity");
             await WriteProblemAsync(
@@ -24,7 +25,7 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
                 StatusCodes.Status401Unauthorized
             );
         }
-        catch (DependencyUnavailableException exception)
+        catch (ExternalServiceUnavailableException exception)
         {
             logger.Error(exception, "A required service is unavailable");
             await WriteProblemAsync(

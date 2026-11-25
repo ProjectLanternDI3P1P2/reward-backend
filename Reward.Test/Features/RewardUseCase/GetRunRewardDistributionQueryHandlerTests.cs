@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using Reward.Application.Exceptions;
 using Reward.Application.Features.RewardUseCase.GetRunRewardDistribution;
 using Reward.Application.Ports;
 using Reward.Domain.Entities;
@@ -196,7 +197,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
                 );
 
         // Assert
-        await act.Should().ThrowAsync<UnauthenticatedException>();
+        await act.Should().ThrowAsync<UnauthorizedException>();
         VerifyRewardsWereNotRead();
     }
 
@@ -224,7 +225,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
     {
         // Arrange
         SetupParticipation(ParticipantUserId)
-            .ThrowsAsync(new DependencyUnavailableException("Player", new TimeoutException()));
+            .ThrowsAsync(new ExternalServiceUnavailableException("Player", new TimeoutException()));
 
         // Act
         Func<Task> act = () =>
@@ -235,7 +236,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
                 );
 
         // Assert
-        await act.Should().ThrowAsync<DependencyUnavailableException>();
+        await act.Should().ThrowAsync<ExternalServiceUnavailableException>();
         VerifyRewardsWereNotRead();
     }
 

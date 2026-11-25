@@ -7,9 +7,8 @@ namespace Reward.Infrastructure.Services;
 /// Local stand-in for Player's RewardPlayerService while it is not implemented: every
 /// authenticated user is treated as a participant. Enabled by Grpc:Player:UseDevelopmentMock.
 /// </summary>
-public sealed class DevelopmentPlayerParticipationClient(
-    ILogger<DevelopmentPlayerParticipationClient> logger
-) : IPlayerParticipationClient
+public sealed class MockPlayerParticipationClient(ILogger<MockPlayerParticipationClient> logger)
+    : IPlayerParticipationClient
 {
     public Task<bool> IsRunParticipantAsync(
         string externalUserId,

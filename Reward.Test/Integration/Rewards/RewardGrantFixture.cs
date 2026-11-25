@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Reward.Application.Exceptions;
 using Reward.Application.Ports;
-using Reward.Domain.Exceptions;
 
 namespace Reward.Test.Integration.Rewards;
 
@@ -61,7 +61,7 @@ public sealed class RewardGrantFixture : IAsyncLifetime
             {
                 "participant" => Task.FromResult(true),
                 "outsider" => Task.FromResult(false),
-                _ => throw new DependencyUnavailableException(
+                _ => throw new ExternalServiceUnavailableException(
                     "Player",
                     new TimeoutException("Player did not answer.")
                 ),

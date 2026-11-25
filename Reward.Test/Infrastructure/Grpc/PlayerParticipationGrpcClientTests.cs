@@ -2,8 +2,8 @@ using FluentAssertions;
 using Grpc.Core;
 using Microsoft.Extensions.Options;
 using Moq;
+using Reward.Application.Exceptions;
 using Reward.Contracts.V1;
-using Reward.Domain.Exceptions;
 using Reward.Infrastructure.Grpc.Clients;
 using Reward.Infrastructure.Grpc.Configuration;
 
@@ -79,7 +79,7 @@ public sealed class PlayerParticipationGrpcClientTests
                 );
 
         // Assert: participation is never assumed when Player cannot confirm it.
-        await act.Should().ThrowAsync<DependencyUnavailableException>();
+        await act.Should().ThrowAsync<ExternalServiceUnavailableException>();
     }
 
     private PlayerParticipationGrpcClient CreateClient() =>

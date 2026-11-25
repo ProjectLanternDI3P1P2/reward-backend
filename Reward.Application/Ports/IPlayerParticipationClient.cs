@@ -7,7 +7,7 @@ namespace Reward.Application.Ports;
 public interface IPlayerParticipationClient
 {
     /// <param name="externalUserId">Trusted gateway identity (X-User-Id, Keycloak subject).</param>
-    /// <exception cref="Reward.Domain.Exceptions.DependencyUnavailableException">
+    /// <exception cref="Reward.Application.Exceptions.ExternalServiceUnavailableException">
     /// Player cannot answer: no participation can be assumed.
     /// </exception>
     Task<bool> IsRunParticipantAsync(
