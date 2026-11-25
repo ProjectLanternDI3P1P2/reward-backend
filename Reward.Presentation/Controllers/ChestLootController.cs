@@ -22,11 +22,7 @@ public sealed class ChestLootController(ISender sender, IChestLootLogWriter logW
     {
         // Normalize the public transport value before exact table validation and lookup.
         string difficulty = request.Difficulty?.Trim().ToUpperInvariant() ?? string.Empty;
-        Guid chestId = ChestLootIdentity.Create(
-            request.DungeonRunId,
-            request.Floor,
-            request.ChestElementId
-        );
+        Guid chestId = request.ChestId;
 
         try
         {
@@ -37,8 +33,7 @@ public sealed class ChestLootController(ISender sender, IChestLootLogWriter logW
                     request.DungeonRunId,
                     chestId,
                     request.Floor,
-                    difficulty,
-                    request.ChestElementId
+                    difficulty
                 ),
                 cancellationToken
             );
