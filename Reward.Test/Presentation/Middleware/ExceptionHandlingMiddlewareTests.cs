@@ -119,7 +119,7 @@ public class ExceptionHandlingMiddlewareTests
             .Returns(isDevelopment ? Environments.Development : Environments.Production);
         var middleware = new ExceptionHandlingMiddleware(Logger.None, environment.Object);
         var context = new DefaultHttpContext();
-        context.Request.Path = "/api/v1/test";
+        context.Request.Path = "/api/rewards/v1/test";
         context.Response.Body = new MemoryStream();
 
         await middleware.InvokeAsync(context, _ => throw exception);

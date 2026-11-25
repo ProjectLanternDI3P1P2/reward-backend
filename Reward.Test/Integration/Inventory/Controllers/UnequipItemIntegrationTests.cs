@@ -22,7 +22,7 @@ public sealed class UnequipItemIntegrationTests(InventoryControllerFixture fixtu
         Guid itemInstanceId = await SeedEquippedItemAsync("RIGHT_HAND");
 
         HttpResponseMessage response = await Fixture.HttpClient.DeleteAsync(
-            $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{itemInstanceId}/equipment",
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{itemInstanceId}/equipment",
             TestContext.Current.CancellationToken
         );
 
@@ -40,7 +40,7 @@ public sealed class UnequipItemIntegrationTests(InventoryControllerFixture fixtu
         Guid itemInstanceId = await SeedEquippedItemAsync("RIGHT_HAND", "LEFT_HAND");
 
         HttpResponseMessage response = await Fixture.HttpClient.DeleteAsync(
-            $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{itemInstanceId}/equipment",
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{itemInstanceId}/equipment",
             TestContext.Current.CancellationToken
         );
 
@@ -52,7 +52,8 @@ public sealed class UnequipItemIntegrationTests(InventoryControllerFixture fixtu
     public async Task UnequipItem_WhenRetried_RemainsSuccessfulAndKeepsTheItem()
     {
         Guid itemInstanceId = await SeedEquippedItemAsync("RIGHT_HAND");
-        string path = $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{itemInstanceId}/equipment";
+        string path =
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{itemInstanceId}/equipment";
 
         HttpResponseMessage firstResponse = await Fixture.HttpClient.DeleteAsync(
             path,

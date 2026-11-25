@@ -76,6 +76,9 @@ public sealed class AwardUniqueGroupRewardCommandHandler(
             RewardSource = source,
             Type = RewardType.Item,
             Status = RewardStatus.Pending,
+            Distribution = RewardDistribution.Unique,
+            CauseId = request.CauseId,
+            RecipientPlayerId = recipient.PlayerId,
             RewardKey = rewardKey,
             CreatedAt = now,
         };

@@ -18,6 +18,7 @@ public sealed class GrantRewardCommandHandlerTests
     private readonly Guid heroId = Guid.NewGuid();
     private readonly Guid runId = Guid.NewGuid();
     private readonly Guid causeId = Guid.NewGuid();
+    private readonly Guid playerId = Guid.NewGuid();
     private readonly Item sword = CreateItem("WEAPON");
     private readonly Item potion = CreateItem("POTION");
     private readonly Inventory inventory;
@@ -64,7 +65,10 @@ public sealed class GrantRewardCommandHandlerTests
 
         // Act
         GrantRewardResult result = await handler.Handle(
-            CreateCommand(new GrantRewardItem(sword.Id, 1), new GrantRewardItem(potion.Id, 3)),
+            CreateCommand(new GrantRewardItem(sword.Id, 1), new GrantRewardItem(potion.Id, 3)) with
+            {
+                PlayerId = playerId,
+            },
             TestContext.Current.CancellationToken
         );
 
@@ -83,6 +87,9 @@ public sealed class GrantRewardCommandHandlerTests
                 repository.Add(
                     It.Is<RewardEntity>(reward =>
                         reward.Status == RewardStatus.Applied
+                        && reward.Distribution == RewardDistribution.SharedPerParticipant
+                        && reward.CauseId == causeId
+                        && reward.RecipientPlayerId == playerId
                         && reward.HeroId == heroId
                         && reward.RewardKey == $"MONSTER:{causeId}:{heroId}"
                         && reward.Items.Count == 2

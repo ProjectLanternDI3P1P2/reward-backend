@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Reward.Application.Exceptions;
 using Reward.Domain.Exceptions;
 using ILogger = Serilog.ILogger;
 
@@ -14,6 +15,28 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         try
         {
             await next(context);
+        }
+        catch (UnauthorizedException exception)
+        {
+            logger.Warning(exception, "Request without a trusted user identity");
+            await WriteProblemAsync(
+                context,
+                new ProblemDetails { Title = "Unauthorized", Detail = exception.Message },
+                StatusCodes.Status401Unauthorized
+            );
+        }
+        catch (ExternalServiceUnavailableException exception)
+        {
+            logger.Error(exception, "A required service is unavailable");
+            await WriteProblemAsync(
+                context,
+                new ProblemDetails
+                {
+                    Title = "Service unavailable",
+                    Detail = "The request cannot be completed right now. Try again later.",
+                },
+                StatusCodes.Status503ServiceUnavailable
+            );
         }
         catch (KeyNotFoundException exception)
         {

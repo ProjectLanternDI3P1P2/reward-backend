@@ -5,7 +5,7 @@ using Reward.Application.Features.PlaceholderUseCase.GetPlaceholderById;
 namespace Reward.Presentation.Controllers;
 
 [ApiController]
-[Route("api/v1/placeholders")]
+[Route("api/rewards/v1/placeholders")]
 public sealed class PlaceholderController(ISender sender) : ControllerBase
 {
     [HttpGet("{placeholderId:guid}")]

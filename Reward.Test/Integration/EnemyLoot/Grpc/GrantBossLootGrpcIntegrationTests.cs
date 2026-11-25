@@ -39,6 +39,9 @@ public sealed class GrantBossLootGrpcIntegrationTests(EnemyLootGrpcFixture fixtu
             .Should()
             .Contain(seeded.BladeId);
         RewardEntity reward = (await GetRewardsAsync()).Should().ContainSingle().Subject;
+        reward.Distribution.Should().Be(RewardDistribution.SharedPerParticipant);
+        reward.CauseId.Should().Be(enemyId);
+        reward.RecipientPlayerId.Should().Be(seeded.Hero.PlayerId);
         reward
             .RewardKey.Should()
             .Be(RewardEntity.CreateKey(RewardSourceType.Boss, enemyId, seeded.Hero.HeroId));
