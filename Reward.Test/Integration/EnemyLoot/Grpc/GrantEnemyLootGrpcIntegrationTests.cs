@@ -47,6 +47,9 @@ public sealed class GrantEnemyLootGrpcIntegrationTests(EnemyLootGrpcFixture fixt
         RewardEntity reward = (await GetRewardsAsync()).Should().ContainSingle().Subject;
         reward.HeroId.Should().Be(seeded.Heroes[0].HeroId);
         reward.RunId.Should().Be(runId);
+        reward.Distribution.Should().Be(RewardDistribution.SharedPerParticipant);
+        reward.CauseId.Should().Be(enemyId);
+        reward.RecipientPlayerId.Should().Be(seeded.Heroes[0].PlayerId);
         reward.Status.Should().Be(RewardStatus.Applied);
         reward
             .RewardKey.Should()
