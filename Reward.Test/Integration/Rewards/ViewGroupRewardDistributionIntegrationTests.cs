@@ -25,7 +25,7 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
 
     [Theory]
     [InlineData(null, HttpStatusCode.Unauthorized)]
-    [InlineData("outsider", HttpStatusCode.Forbidden)]
+    [InlineData("outsider", HttpStatusCode.NotFound)]
     [InlineData("player-unavailable", HttpStatusCode.ServiceUnavailable)]
     public async Task Get_WithoutConfirmedParticipation_DoesNotReturnRewards(
         string? identity,

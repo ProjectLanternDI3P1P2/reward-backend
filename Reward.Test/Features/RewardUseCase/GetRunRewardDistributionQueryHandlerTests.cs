@@ -1,8 +1,10 @@
 using FluentAssertions;
 using Moq;
 using Reward.Application.Features.RewardUseCase.GetRunRewardDistribution;
+using Reward.Application.Ports;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using RewardEntity = Reward.Domain.Entities.Reward;
 
@@ -16,7 +18,15 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
     private readonly Guid bossId = Guid.NewGuid();
     private readonly Guid swordId = Guid.NewGuid();
     private readonly Guid potionId = Guid.NewGuid();
+    private const string ParticipantUserId = "keycloak-participant";
+
     private readonly Mock<IRewardRepository> repository = new();
+    private readonly Mock<IPlayerParticipationClient> participation = new();
+
+    public GetRunRewardDistributionQueryHandlerTests()
+    {
+        SetupParticipation(ParticipantUserId).ReturnsAsync(true);
+    }
 
     [Fact]
     public async Task Handle_DistributedRewards_ListsEveryDistributedReward()
@@ -30,7 +40,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         // Act
         RunRewardDistribution result = await CreateHandler()
             .Handle(
-                new GetRunRewardDistributionQuery(runId),
+                new GetRunRewardDistributionQuery(runId, ParticipantUserId),
                 TestContext.Current.CancellationToken
             );
 
@@ -59,7 +69,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         // Act
         RunRewardDistribution result = await CreateHandler()
             .Handle(
-                new GetRunRewardDistributionQuery(runId),
+                new GetRunRewardDistributionQuery(runId, ParticipantUserId),
                 TestContext.Current.CancellationToken
             );
 
@@ -94,7 +104,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         // Act
         RunRewardDistribution result = await CreateHandler()
             .Handle(
-                new GetRunRewardDistributionQuery(runId),
+                new GetRunRewardDistributionQuery(runId, ParticipantUserId),
                 TestContext.Current.CancellationToken
             );
 
@@ -121,7 +131,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         // Act
         RunRewardDistribution result = await CreateHandler()
             .Handle(
-                new GetRunRewardDistributionQuery(runId),
+                new GetRunRewardDistributionQuery(runId, ParticipantUserId),
                 TestContext.Current.CancellationToken
             );
 
@@ -141,7 +151,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         // Act
         RunRewardDistribution result = await CreateHandler()
             .Handle(
-                new GetRunRewardDistributionQuery(runId),
+                new GetRunRewardDistributionQuery(runId, ParticipantUserId),
                 TestContext.Current.CancellationToken
             );
 
@@ -162,7 +172,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         // Act
         RunRewardDistribution result = await CreateHandler()
             .Handle(
-                new GetRunRewardDistributionQuery(runId),
+                new GetRunRewardDistributionQuery(runId, ParticipantUserId),
                 TestContext.Current.CancellationToken
             );
 
@@ -171,7 +181,79 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         result.Distributions.Should().BeEmpty();
     }
 
-    private GetRunRewardDistributionQueryHandler CreateHandler() => new(repository.Object);
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Handle_MissingUserIdentity_ThrowsUnauthenticatedWithoutReading(string? userId)
+    {
+        // Act
+        Func<Task> act = () =>
+            CreateHandler()
+                .Handle(
+                    new GetRunRewardDistributionQuery(runId, userId),
+                    TestContext.Current.CancellationToken
+                );
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthenticatedException>();
+        VerifyRewardsWereNotRead();
+    }
+
+    [Fact]
+    public async Task Handle_UserWhoDidNotTakePartInTheRun_ThrowsNotFoundWithoutReading()
+    {
+        // Arrange
+        SetupParticipation("keycloak-outsider").ReturnsAsync(false);
+
+        // Act
+        Func<Task> act = () =>
+            CreateHandler()
+                .Handle(
+                    new GetRunRewardDistributionQuery(runId, "keycloak-outsider"),
+                    TestContext.Current.CancellationToken
+                );
+
+        // Assert: the same answer as an unknown run, so the run is not disclosed.
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        VerifyRewardsWereNotRead();
+    }
+
+    [Fact]
+    public async Task Handle_PlayerUnavailable_PropagatesWithoutReading()
+    {
+        // Arrange
+        SetupParticipation(ParticipantUserId)
+            .ThrowsAsync(new DependencyUnavailableException("Player", new TimeoutException()));
+
+        // Act
+        Func<Task> act = () =>
+            CreateHandler()
+                .Handle(
+                    new GetRunRewardDistributionQuery(runId, ParticipantUserId),
+                    TestContext.Current.CancellationToken
+                );
+
+        // Assert
+        await act.Should().ThrowAsync<DependencyUnavailableException>();
+        VerifyRewardsWereNotRead();
+    }
+
+    private Moq.Language.Flow.ISetup<IPlayerParticipationClient, Task<bool>> SetupParticipation(
+        string userId
+    ) =>
+        participation.Setup(client =>
+            client.IsRunParticipantAsync(userId, runId, It.IsAny<CancellationToken>())
+        );
+
+    private void VerifyRewardsWereNotRead() =>
+        repository.Verify(
+            source => source.GetGroupRewardsByRunAsync(runId, It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+
+    private GetRunRewardDistributionQueryHandler CreateHandler() =>
+        new(repository.Object, participation.Object);
 
     private void SetupRewards(params RewardEntity[] rewards) =>
         repository

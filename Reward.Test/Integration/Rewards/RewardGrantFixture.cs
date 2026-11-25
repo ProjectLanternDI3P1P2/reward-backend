@@ -1,7 +1,8 @@
-using System.Net;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Reward.Presentation.Controllers;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Reward.Application.Ports;
+using Reward.Domain.Exceptions;
 
 namespace Reward.Test.Integration.Rewards;
 
@@ -25,9 +26,12 @@ public sealed class RewardGrantFixture : IAsyncLifetime
         factory = new RewardWebApplicationFactory(database.ConnectionString);
         configuredFactory = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
-                services
-                    .AddHttpClient(RunRewardsController.PlayerMembershipClient)
-                    .ConfigurePrimaryHttpMessageHandler(() => new PlayerMembershipHandler())
+                services.Replace(
+                    ServiceDescriptor.Scoped<
+                        IPlayerParticipationClient,
+                        FakePlayerParticipationClient
+                    >()
+                )
             )
         );
         await database.ResetAsync();
@@ -45,21 +49,22 @@ public sealed class RewardGrantFixture : IAsyncLifetime
         }
     }
 
-    private sealed class PlayerMembershipHandler : HttpMessageHandler
+    // Stands in for Player's RewardPlayerService, keyed by the trusted gateway identity.
+    private sealed class FakePlayerParticipationClient : IPlayerParticipationClient
     {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
+        public Task<bool> IsRunParticipantAsync(
+            string externalUserId,
+            Guid dungeonRunId,
             CancellationToken cancellationToken
-        )
-        {
-            string identity = request.Headers.GetValues("X-User-Id").Single();
-            var status = identity switch
+        ) =>
+            externalUserId switch
             {
-                "participant" => HttpStatusCode.NoContent,
-                "outsider" => HttpStatusCode.Forbidden,
-                _ => HttpStatusCode.ServiceUnavailable,
+                "participant" => Task.FromResult(true),
+                "outsider" => Task.FromResult(false),
+                _ => throw new DependencyUnavailableException(
+                    "Player",
+                    new TimeoutException("Player did not answer.")
+                ),
             };
-            return Task.FromResult(new HttpResponseMessage(status));
-        }
     }
 }

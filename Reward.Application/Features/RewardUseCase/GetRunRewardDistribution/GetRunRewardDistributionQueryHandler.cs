@@ -1,19 +1,42 @@
 using MediatR;
+using Reward.Application.Ports;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using RewardEntity = Reward.Domain.Entities.Reward;
 
 namespace Reward.Application.Features.RewardUseCase.GetRunRewardDistribution;
 
-public sealed class GetRunRewardDistributionQueryHandler(IRewardRepository repository)
-    : IRequestHandler<GetRunRewardDistributionQuery, RunRewardDistribution>
+public sealed class GetRunRewardDistributionQueryHandler(
+    IRewardRepository repository,
+    IPlayerParticipationClient participationClient
+) : IRequestHandler<GetRunRewardDistributionQuery, RunRewardDistribution>
 {
     public async Task<RunRewardDistribution> Handle(
         GetRunRewardDistributionQuery request,
         CancellationToken cancellationToken
     )
     {
+        if (string.IsNullOrWhiteSpace(request.ExternalUserId))
+        {
+            throw new UnauthenticatedException("The authenticated user identity is missing.");
+        }
+
+        // Only the participants of the run may see who received what. Anyone else gets the
+        // same answer as for an unknown run, so the existence of the run is not disclosed.
+        bool isParticipant = await participationClient.IsRunParticipantAsync(
+            request.ExternalUserId,
+            request.DungeonRunId,
+            cancellationToken
+        );
+        if (!isParticipant)
+        {
+            throw new KeyNotFoundException(
+                $"No reward distribution is available for run '{request.DungeonRunId}'."
+            );
+        }
+
         IReadOnlyList<RewardEntity> rewards = await repository.GetGroupRewardsByRunAsync(
             request.DungeonRunId,
             cancellationToken

@@ -15,6 +15,28 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         {
             await next(context);
         }
+        catch (UnauthenticatedException exception)
+        {
+            logger.Warning(exception, "Request without a trusted user identity");
+            await WriteProblemAsync(
+                context,
+                new ProblemDetails { Title = "Unauthorized", Detail = exception.Message },
+                StatusCodes.Status401Unauthorized
+            );
+        }
+        catch (DependencyUnavailableException exception)
+        {
+            logger.Error(exception, "A required service is unavailable");
+            await WriteProblemAsync(
+                context,
+                new ProblemDetails
+                {
+                    Title = "Service unavailable",
+                    Detail = "The request cannot be completed right now. Try again later.",
+                },
+                StatusCodes.Status503ServiceUnavailable
+            );
+        }
         catch (KeyNotFoundException exception)
         {
             logger.Warning(exception, "Resource not found");
