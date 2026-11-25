@@ -64,6 +64,9 @@ public sealed class GrantRewardCommandHandler(
             RewardSource = source,
             Type = RewardType.Item,
             Status = RewardStatus.Pending,
+            Distribution = RewardDistribution.SharedPerParticipant,
+            CauseId = request.CauseId,
+            RecipientPlayerId = request.PlayerId,
             RewardKey = rewardKey,
             CreatedAt = now,
         };

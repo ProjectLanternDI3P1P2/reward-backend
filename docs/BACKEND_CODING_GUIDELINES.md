@@ -182,22 +182,22 @@ Use resource-oriented routes.
 Prefer:
 
 ```text
-GET    /api/v1/players/{playerId}
-POST   /api/v1/players
-PUT    /api/v1/players/{playerId}
-DELETE /api/v1/players/{playerId}
+GET    /api/rewards/v1/heroes/{heroId}/inventory
+POST   /api/rewards/v1/heroes/{heroId}/inventory/items
+PUT    /api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/equipment
+DELETE /api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}
 ```
 
 Avoid action-oriented routes such as:
 
 ```text
-POST /api/v1/createPlayer
-GET  /api/v1/getPlayer
+POST /api/rewards/v1/addItemToInventory
+GET  /api/rewards/v1/getInventory
 ```
 
 Rules:
 
-- all APIs start at `/api/v1/...`;
+- Rewards client-facing APIs start at `/api/rewards/v1/...`;
 - route resources use lowercase plural nouns;
 - use explicit route identifiers when useful;
 - do not expose EF Core entities directly;

@@ -37,7 +37,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Act through the public HTTP endpoint and the complete MediatR transaction pipeline.
         using HttpClient client = fixture.CreateHttpClient();
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             request,
             TestContext.Current.CancellationToken
         );
@@ -98,7 +98,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Act through ASP.NET JSON binding before the controller can derive a chest identity.
         using HttpClient client = fixture.CreateHttpClient();
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             body,
             TestContext.Current.CancellationToken
         );
@@ -132,7 +132,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Act through JSON conversion and nullable contract enforcement.
         using HttpClient client = fixture.CreateHttpClient();
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             body,
             TestContext.Current.CancellationToken
         );
@@ -272,7 +272,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
 
         // Act and assert refusal leaves the persisted loot filled and byte-for-byte unchanged.
         HttpResponseMessage refused = await client.PostAsync(
-            $"/api/v1/heroes/{heroId}/runs/{runId}/chests/{generated.ChestId}/claim",
+            $"/api/rewards/v1/heroes/{heroId}/runs/{runId}/chests/{generated.ChestId}/claim",
             content: null,
             TestContext.Current.CancellationToken
         );
@@ -299,7 +299,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         HttpResponseMessage claimed = await client.PostAsync(
-            $"/api/v1/heroes/{heroId}/runs/{runId}/chests/{generated.ChestId}/claim",
+            $"/api/rewards/v1/heroes/{heroId}/runs/{runId}/chests/{generated.ChestId}/claim",
             content: null,
             TestContext.Current.CancellationToken
         );
@@ -349,12 +349,12 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         Task<HttpResponseMessage>[] calls =
         [
             client.PostAsJsonAsync(
-                "/api/v1/chest-loot/generate",
+                "/api/rewards/v1/chest-loot/generate",
                 firstRequest,
                 TestContext.Current.CancellationToken
             ),
             client.PostAsJsonAsync(
-                "/api/v1/chest-loot/generate",
+                "/api/rewards/v1/chest-loot/generate",
                 secondRequest,
                 TestContext.Current.CancellationToken
             ),
@@ -464,7 +464,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Act through transport, validation, transaction rollback and rejection logging.
         using HttpClient client = fixture.CreateHttpClient();
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             request,
             TestContext.Current.CancellationToken
         );
@@ -507,7 +507,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Act through application validation rather than JSON binding.
         using HttpClient client = fixture.CreateHttpClient();
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             request,
             TestContext.Current.CancellationToken
         );
@@ -533,7 +533,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
         // Act through selection failure and centralized HTTP exception mapping.
         using HttpClient client = fixture.CreateHttpClient();
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             request,
             TestContext.Current.CancellationToken
         );
@@ -693,7 +693,7 @@ public sealed class GenerateChestLootHttpIntegrationTests(ChestLootGrpcFixture f
     )
     {
         HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/v1/chest-loot/generate",
+            "/api/rewards/v1/chest-loot/generate",
             request,
             TestContext.Current.CancellationToken
         );

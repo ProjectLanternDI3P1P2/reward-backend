@@ -1002,13 +1002,28 @@ namespace Reward.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid?>("CauseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cause_id");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("Distribution")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("INDIVIDUAL")
+                        .HasColumnName("distribution");
+
                     b.Property<Guid>("HeroId")
                         .HasColumnType("uuid")
                         .HasColumnName("hero_id");
+
+                    b.Property<Guid?>("RecipientPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_player_id");
 
                     b.Property<string>("RewardKey")
                         .IsRequired()
@@ -1045,6 +1060,8 @@ namespace Reward.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("RewardSourceId");
+
+                    b.HasIndex("RunId");
 
                     b.ToTable("reward", null, t =>
                         {

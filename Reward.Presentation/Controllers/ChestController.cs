@@ -7,7 +7,7 @@ using Reward.Domain.Exceptions;
 namespace Reward.Presentation.Controllers;
 
 [ApiController]
-[Route("api/v1/heroes/{heroId:guid}/runs/{dungeonRunId:guid}/chests")]
+[Route("api/rewards/v1/heroes/{heroId:guid}/runs/{dungeonRunId:guid}/chests")]
 public sealed class ChestController(ISender sender, IChestLootLogWriter logWriter) : ControllerBase
 {
     [HttpPost("{chestId:guid}/claim")]

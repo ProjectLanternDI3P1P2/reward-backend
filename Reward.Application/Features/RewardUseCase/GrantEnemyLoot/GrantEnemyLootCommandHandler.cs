@@ -48,43 +48,43 @@ public sealed class GrantEnemyLootCommandHandler(
         // A replay is answered from the persisted rewards alone, so it still works when the
         // loot table was changed or removed since the first delivery.
         var heroLoots = new List<GrantedHeroLoot>();
-        var pendingHeroIds = new List<Guid>();
-        foreach (Guid heroId in recipients.Select(recipient => recipient.HeroId))
+        var pendingRecipients = new List<ActivityParticipant>();
+        foreach (ActivityParticipant recipient in recipients)
         {
             RewardEntity? existing = await rewardRepository.GetByKeyAsync(
-                RewardEntity.CreateKey(request.EnemyType, request.EnemyId, heroId),
+                RewardEntity.CreateKey(request.EnemyType, request.EnemyId, recipient.HeroId),
                 cancellationToken
             );
             if (existing is null)
             {
-                pendingHeroIds.Add(heroId);
+                pendingRecipients.Add(recipient);
             }
             else
             {
-                heroLoots.Add(AcknowledgeDuplicate(existing, request, heroId));
+                heroLoots.Add(AcknowledgeDuplicate(existing, request, recipient.HeroId));
             }
         }
 
         var fullInventoryHeroIds = new List<Guid>();
-        if (pendingHeroIds.Count > 0)
+        if (pendingRecipients.Count > 0)
         {
             (LootTable table, RewardSource source) = await LoadLootSourceAsync(
                 request,
                 cancellationToken
             );
 
-            foreach (Guid heroId in pendingHeroIds)
+            foreach (ActivityParticipant recipient in pendingRecipients)
             {
                 GrantedHeroLoot? heroLoot = await TryGrantToHeroAsync(
                     request,
                     table,
                     source,
-                    heroId,
+                    recipient,
                     cancellationToken
                 );
                 if (heroLoot is null)
                 {
-                    fullInventoryHeroIds.Add(heroId);
+                    fullInventoryHeroIds.Add(recipient.HeroId);
                 }
                 else
                 {
@@ -136,10 +136,11 @@ public sealed class GrantEnemyLootCommandHandler(
         GrantEnemyLootCommand request,
         LootTable table,
         RewardSource source,
-        Guid heroId,
+        ActivityParticipant recipient,
         CancellationToken cancellationToken
     )
     {
+        Guid heroId = recipient.HeroId;
         string rewardKey = RewardEntity.CreateKey(request.EnemyType, request.EnemyId, heroId);
 
         Inventory inventory =
@@ -177,6 +178,12 @@ public sealed class GrantEnemyLootCommandHandler(
             Type = RewardType.Item,
             Status = RewardStatus.Pending,
             RewardKey = rewardKey,
+            // Every eligible participant of the combat receives its own draw from the enemy:
+            // recording the defeated enemy and the player makes it part of the run's group
+            // reward distribution.
+            Distribution = RewardDistribution.SharedPerParticipant,
+            CauseId = request.EnemyId,
+            RecipientPlayerId = recipient.PlayerId,
             CreatedAt = now,
         };
         foreach (SelectedLootItem selected in loot)

@@ -295,7 +295,7 @@ public sealed class ClaimChestContentsIntegrationTests(ChestControllerFixture fi
 
     private Task<HttpResponseMessage> ClaimAsync(Guid heroId, Guid dungeonRunId, Guid chestId) =>
         Fixture.HttpClient.PostAsync(
-            $"/api/v1/heroes/{heroId}/runs/{dungeonRunId}/chests/{chestId}/claim",
+            $"/api/rewards/v1/heroes/{heroId}/runs/{dungeonRunId}/chests/{chestId}/claim",
             content: null,
             TestContext.Current.CancellationToken
         );

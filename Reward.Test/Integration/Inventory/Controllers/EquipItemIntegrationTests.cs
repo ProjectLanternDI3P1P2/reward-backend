@@ -22,7 +22,7 @@ public sealed class EquipItemIntegrationTests(InventoryControllerFixture fixture
         SeededItem newSword = await SeedItemAsync("SWORD", "RIGHT_HAND");
 
         HttpResponseMessage response = await Fixture.HttpClient.PutAsJsonAsync(
-            $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{newSword.ItemInstanceId}/equipment",
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{newSword.ItemInstanceId}/equipment",
             new EquipItemRequest(newSword.SlotId),
             TestContext.Current.CancellationToken
         );
@@ -50,7 +50,7 @@ public sealed class EquipItemIntegrationTests(InventoryControllerFixture fixture
         );
 
         HttpResponseMessage response = await Fixture.HttpClient.PutAsJsonAsync(
-            $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{sword.ItemInstanceId}/equipment",
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{sword.ItemInstanceId}/equipment",
             new EquipItemRequest(sword.SlotId),
             TestContext.Current.CancellationToken
         );
@@ -71,7 +71,7 @@ public sealed class EquipItemIntegrationTests(InventoryControllerFixture fixture
         );
 
         HttpResponseMessage response = await Fixture.HttpClient.PutAsJsonAsync(
-            $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{item.ItemInstanceId}/equipment",
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{item.ItemInstanceId}/equipment",
             new EquipItemRequest(item.SlotId),
             TestContext.Current.CancellationToken
         );
@@ -86,7 +86,7 @@ public sealed class EquipItemIntegrationTests(InventoryControllerFixture fixture
         SeededItem item = await SeedItemAsync("SWORD", "RIGHT_HAND", isListed: true);
 
         HttpResponseMessage response = await Fixture.HttpClient.PutAsJsonAsync(
-            $"/api/v1/heroes/{WarriorHeroId}/inventory/items/{item.ItemInstanceId}/equipment",
+            $"/api/rewards/v1/heroes/{WarriorHeroId}/inventory/items/{item.ItemInstanceId}/equipment",
             new EquipItemRequest(item.SlotId),
             TestContext.Current.CancellationToken
         );
