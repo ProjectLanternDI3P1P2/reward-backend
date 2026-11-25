@@ -5,6 +5,7 @@ using Reward.Application.Messaging;
 using Reward.Contracts.Events.V1;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 using RewardEntity = Reward.Domain.Entities.Reward;
@@ -232,7 +233,7 @@ public sealed class ClaimChestContentsCommandHandlerTests
         // Assert
         await action
             .Should()
-            .ThrowAsync<InvalidOperationException>()
+            .ThrowAsync<InventoryCapacityExceededException>()
             .WithMessage("*item capacity of 1*");
         reward.HeroId.Should().Be(Guid.Empty);
         inventoryRepository.Verify(

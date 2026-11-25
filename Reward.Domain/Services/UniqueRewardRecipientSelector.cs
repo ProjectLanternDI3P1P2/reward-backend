@@ -1,3 +1,4 @@
+using Reward.Domain.Exceptions;
 using Reward.Domain.ValueObjects;
 
 namespace Reward.Domain.Services;
@@ -19,9 +20,7 @@ public static class UniqueRewardRecipientSelector
             RewardEligibilityPolicy.GetEligibleParticipants(participants);
         if (eligible.Count == 0)
         {
-            throw new InvalidOperationException(
-                "No eligible participant can receive the unique reward."
-            );
+            throw new NoEligibleRecipientException();
         }
 
         return eligible[random.NextInt32(eligible.Count)];

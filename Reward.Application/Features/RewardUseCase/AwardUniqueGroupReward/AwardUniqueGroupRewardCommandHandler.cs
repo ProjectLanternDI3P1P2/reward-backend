@@ -1,6 +1,7 @@
 using MediatR;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 using Reward.Domain.ValueObjects;
@@ -104,16 +105,15 @@ public sealed class AwardUniqueGroupRewardCommandHandler(
     {
         if (existing.Status != RewardStatus.Applied)
         {
-            throw new InvalidOperationException(
-                $"Reward '{existing.RewardKey}' exists but is not applied."
-            );
+            throw new RewardConflictException(existing.RewardKey, "exists but is not applied");
         }
 
         RewardItem awardedItem = existing.Items.Single();
         if (existing.RunId != request.RunId || awardedItem.Quantity != request.Quantity)
         {
-            throw new InvalidOperationException(
-                $"Reward '{existing.RewardKey}' was already awarded with a different content."
+            throw new RewardConflictException(
+                existing.RewardKey,
+                "was already awarded with a different content"
             );
         }
 

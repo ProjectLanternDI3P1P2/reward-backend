@@ -2,6 +2,7 @@ using MediatR;
 using Reward.Application.Ports;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -31,12 +32,12 @@ public sealed class EquipItemCommandHandler(
 
         if (itemInstance.Status == ItemInstanceStatus.Reserved)
         {
-            throw new InvalidOperationException("A reserved item cannot be equipped.");
+            throw new ItemUnavailableException("A reserved item cannot be equipped.");
         }
 
         if (await repository.HasActiveMarketplaceListingAsync(itemInstance.Id, cancellationToken))
         {
-            throw new InvalidOperationException("A listed item cannot be equipped.");
+            throw new ItemUnavailableException("A listed item cannot be equipped.");
         }
 
         HeroProfile hero = await heroProfileClient.GetByHeroIdAsync(
@@ -59,7 +60,7 @@ public sealed class EquipItemCommandHandler(
 
         EquipmentSlot requestedSlot =
             compatibleSlots.SingleOrDefault(slot => slot.Id == request.SlotId)
-            ?? throw new InvalidOperationException(
+            ?? throw new ItemNotEquippableException(
                 "The selected slot is not compatible with this item."
             );
         IReadOnlyList<EquipmentSlot> targetSlots = IsTwoHanded(category)
@@ -115,7 +116,7 @@ public sealed class EquipItemCommandHandler(
     {
         if (hero.Level < item.LevelRequired)
         {
-            throw new InvalidOperationException("The hero level is too low to equip this item.");
+            throw new ItemNotEquippableException("The hero level is too low to equip this item.");
         }
 
         IReadOnlyList<string> requiredClasses = item
@@ -123,7 +124,7 @@ public sealed class EquipItemCommandHandler(
             .ToList();
         if (requiredClasses.Count > 0 && !requiredClasses.Any(hero.ClassTags.Contains))
         {
-            throw new InvalidOperationException("The hero class cannot equip this item.");
+            throw new ItemNotEquippableException("The hero class cannot equip this item.");
         }
     }
 
@@ -143,7 +144,7 @@ public sealed class EquipItemCommandHandler(
                 EquipmentSlotName.Jewelry1,
                 EquipmentSlotName.Jewelry2,
             ],
-            _ => throw new InvalidOperationException("This item category cannot be equipped."),
+            _ => throw new ItemNotEquippableException("This item category cannot be equipped."),
         };
 
     private static bool IsTwoHanded(ItemCategory category) =>
