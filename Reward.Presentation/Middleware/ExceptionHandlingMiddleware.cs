@@ -36,6 +36,12 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
             logger.Warning(exception, "Chest loot table is invalid");
             await HandleConflictExceptionAsync(context, exception);
         }
+        // Must stay before InvalidOperationException, which this refusal derives from.
+        catch (InventoryCapacityExceededException exception)
+        {
+            logger.Warning(exception, "Inventory capacity refused the operation");
+            await HandleInventoryCapacityExceededAsync(context, exception);
+        }
         catch (InvalidOperationException exception)
         {
             logger.Warning(exception, "Business conflict occurred");
@@ -60,8 +66,43 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status409Conflict;
-        context.Response.ContentType = ProblemDetailsContentType;
-        await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
+        // The content type must be passed to WriteAsJsonAsync: one set on the response
+        // beforehand is overwritten with application/json.
+        await context.Response.WriteAsJsonAsync(
+            problemDetails,
+            options: null,
+            contentType: ProblemDetailsContentType,
+            context.RequestAborted
+        );
+    }
+
+    // Every command runs in one transaction, so a capacity refusal never leaves a partial
+    // transfer behind: the client only has to free space and retry.
+    private static async Task HandleInventoryCapacityExceededAsync(
+        HttpContext context,
+        InventoryCapacityExceededException exception
+    )
+    {
+        var problemDetails = new ProblemDetails
+        {
+            Type = "https://httpstatuses.com/409",
+            Title = "Insufficient inventory capacity",
+            Detail =
+                $"{exception.Message} Free up inventory space and try again. No items were transferred.",
+            Status = StatusCodes.Status409Conflict,
+            Instance = context.Request.Path,
+        };
+        problemDetails.Extensions["code"] = ProblemErrorCodes.InventoryCapacityInsufficient;
+
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        // The content type must be passed to WriteAsJsonAsync: one set on the response
+        // beforehand is overwritten with application/json.
+        await context.Response.WriteAsJsonAsync(
+            problemDetails,
+            options: null,
+            contentType: ProblemDetailsContentType,
+            context.RequestAborted
+        );
     }
 
     private static async Task HandleNotFoundExceptionAsync(HttpContext context, Exception exception)
@@ -76,8 +117,14 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status404NotFound;
-        context.Response.ContentType = ProblemDetailsContentType;
-        await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
+        // The content type must be passed to WriteAsJsonAsync: one set on the response
+        // beforehand is overwritten with application/json.
+        await context.Response.WriteAsJsonAsync(
+            problemDetails,
+            options: null,
+            contentType: ProblemDetailsContentType,
+            context.RequestAborted
+        );
     }
 
     private static async Task HandleValidationExceptionAsync(
@@ -102,8 +149,14 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-        context.Response.ContentType = ProblemDetailsContentType;
-        await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
+        // The content type must be passed to WriteAsJsonAsync: one set on the response
+        // beforehand is overwritten with application/json.
+        await context.Response.WriteAsJsonAsync(
+            problemDetails,
+            options: null,
+            contentType: ProblemDetailsContentType,
+            context.RequestAborted
+        );
     }
 
     private static string ToCamelCase(string propertyName)
@@ -128,7 +181,13 @@ public sealed class ExceptionHandlingMiddleware(ILogger logger, IHostEnvironment
         };
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = ProblemDetailsContentType;
-        await context.Response.WriteAsJsonAsync(problemDetails, context.RequestAborted);
+        // The content type must be passed to WriteAsJsonAsync: one set on the response
+        // beforehand is overwritten with application/json.
+        await context.Response.WriteAsJsonAsync(
+            problemDetails,
+            options: null,
+            contentType: ProblemDetailsContentType,
+            context.RequestAborted
+        );
     }
 }

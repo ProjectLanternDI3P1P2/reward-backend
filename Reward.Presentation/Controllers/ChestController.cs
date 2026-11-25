@@ -10,8 +10,6 @@ namespace Reward.Presentation.Controllers;
 [Route("api/v1/heroes/{heroId:guid}/runs/{dungeonRunId:guid}/chests")]
 public sealed class ChestController(ISender sender, IChestLootLogWriter logWriter) : ControllerBase
 {
-    private const string CapacityErrorCode = "INVENTORY_CAPACITY_INSUFFICIENT";
-
     [HttpPost("{chestId:guid}/claim")]
     public async Task<IActionResult> ClaimContentsAsync(
         Guid heroId,
@@ -31,23 +29,13 @@ public sealed class ChestController(ISender sender, IChestLootLogWriter logWrite
         }
         catch (InventoryCapacityExceededException)
         {
-            // The command transaction has rolled back before control reaches the controller.
+            // Persist the refusal only after the failed command transaction has unwound; the
+            // exception middleware then maps the refusal to its HTTP 409 problem.
             await logWriter.TryWriteCapacityRefusedAsync(
                 new RefusedChestLootClaimLog(heroId, dungeonRunId, chestId),
                 cancellationToken
             );
-
-            var problemDetails = new ProblemDetails
-            {
-                Type = "https://httpstatuses.com/409",
-                Title = "Insufficient inventory capacity",
-                Detail =
-                    "Free up inventory space to retrieve all chest rewards. No items were transferred.",
-                Status = StatusCodes.Status409Conflict,
-                Instance = HttpContext.Request.Path,
-            };
-            problemDetails.Extensions["code"] = CapacityErrorCode;
-            return Conflict(problemDetails);
+            throw;
         }
     }
 }

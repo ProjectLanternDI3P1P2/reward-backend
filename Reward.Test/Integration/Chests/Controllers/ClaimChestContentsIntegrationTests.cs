@@ -118,7 +118,7 @@ public sealed class ClaimChestContentsIntegrationTests(ChestControllerFixture fi
             .GetString()
             .Should()
             .Be(
-                "Free up inventory space to retrieve all chest rewards. No items were transferred."
+                "The inventory has reached its potion capacity of 1. Free up inventory space and try again. No items were transferred."
             );
         int itemInstanceCount = await CountItemInstancesAsync();
         itemInstanceCount.Should().Be(1);

@@ -48,7 +48,7 @@ public sealed class ClaimChestContentsCommandHandler(
                     request.HeroId,
                     request.DungeonRunId,
                     request.ChestId,
-                    "ALREADY_EMPTY",
+                    ChestLootLogOutcomes.AlreadyEmpty,
                     0,
                     clock.UtcNow
                 )
@@ -105,7 +105,7 @@ public sealed class ClaimChestContentsCommandHandler(
                 request.HeroId,
                 request.DungeonRunId,
                 request.ChestId,
-                "CLAIMED",
+                ChestLootLogOutcomes.Claimed,
                 itemInstances.Count,
                 now
             )

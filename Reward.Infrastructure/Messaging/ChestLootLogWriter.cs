@@ -43,7 +43,7 @@ public sealed class ChestLootLogWriter(
                     log.HeroId,
                     log.DungeonRunId,
                     log.ChestId,
-                    "CAPACITY_REFUSED",
+                    ChestLootLogOutcomes.CapacityRefused,
                     0,
                     clock.UtcNow
                 )
@@ -54,7 +54,8 @@ public sealed class ChestLootLogWriter(
         {
             logger.LogError(
                 exception,
-                "Could not persist CAPACITY_REFUSED claim log for chest {ChestId}",
+                "Could not persist {Outcome} claim log for chest {ChestId}",
+                ChestLootLogOutcomes.CapacityRefused,
                 log.ChestId
             );
         }

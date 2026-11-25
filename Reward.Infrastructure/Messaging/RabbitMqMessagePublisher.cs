@@ -13,6 +13,17 @@ public sealed class RabbitMqMessagePublisher(
     ILogger<RabbitMqMessagePublisher> logger
 ) : IMessagePublisher
 {
+    private static readonly string[] ChestRoutingKeys =
+    [
+        $"{ChestLootOutboxMessages.GeneratedEventType}.v1",
+        $"{ChestLootOutboxMessages.GenerationLogType}.v1",
+        $"{ChestLootOutboxMessages.ClaimLogType}.v1",
+    ];
+
+    // The publisher is a singleton: the optional local route is declared once per process
+    // instead of on every publication, and declared again after a failed publication.
+    private volatile bool _chestRouteDeclared;
+
     /// <summary>Publishes one protobuf envelope and waits for broker confirmation.</summary>
     public async Task PublishAsync(MessageEnvelope message, CancellationToken cancellationToken)
     {
@@ -49,31 +60,9 @@ public sealed class RabbitMqMessagePublisher(
 
         // Local Compose may opt into a Reward-owned durable route. Production leaves this unset
         // and lets each downstream consumer bind its own queue.
-        if (!string.IsNullOrWhiteSpace(settings.ChestRoutingQueueName))
+        if (!string.IsNullOrWhiteSpace(settings.ChestRoutingQueueName) && !_chestRouteDeclared)
         {
-            await channel.QueueDeclareAsync(
-                settings.ChestRoutingQueueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                cancellationToken: cancellationToken
-            );
-            foreach (
-                string routingKey in new[]
-                {
-                    $"{ChestLootOutboxMessages.GeneratedEventType}.v1",
-                    $"{ChestLootOutboxMessages.GenerationLogType}.v1",
-                    $"{ChestLootOutboxMessages.ClaimLogType}.v1",
-                }
-            )
-            {
-                await channel.QueueBindAsync(
-                    settings.ChestRoutingQueueName,
-                    settings.ExchangeName,
-                    routingKey,
-                    cancellationToken: cancellationToken
-                );
-            }
+            await DeclareChestRouteAsync(channel, settings, cancellationToken);
         }
 
         // Serialize the transport-neutral envelope defined in the public event contract.
@@ -97,15 +86,24 @@ public sealed class RabbitMqMessagePublisher(
             MessageId = message.MessageId.ToString(),
         };
 
-        // Awaiting this call now includes publisher confirm and mandatory return tracking.
-        await channel.BasicPublishAsync(
-            settings.ExchangeName,
-            $"{message.Type}.v{message.Version}",
-            mandatory: true,
-            basicProperties: properties,
-            body: envelope.ToByteArray(),
-            cancellationToken: cancellationToken
-        );
+        try
+        {
+            // Awaiting this call now includes publisher confirm and mandatory return tracking.
+            await channel.BasicPublishAsync(
+                settings.ExchangeName,
+                $"{message.Type}.v{message.Version}",
+                mandatory: true,
+                basicProperties: properties,
+                body: envelope.ToByteArray(),
+                cancellationToken: cancellationToken
+            );
+        }
+        catch
+        {
+            // An unroutable return may mean the local queue was deleted: rebuild it on retry.
+            _chestRouteDeclared = false;
+            throw;
+        }
 
         // Log success only after BasicPublishAsync has received its broker confirmation.
         logger.LogInformation(
@@ -113,5 +111,33 @@ public sealed class RabbitMqMessagePublisher(
             message.Type,
             message.MessageId
         );
+    }
+
+    private async Task DeclareChestRouteAsync(
+        IChannel channel,
+        RabbitMqOptions settings,
+        CancellationToken cancellationToken
+    )
+    {
+        // Queue declaration and bindings are idempotent, so concurrent first publications
+        // declaring the route twice is harmless and needs no lock.
+        await channel.QueueDeclareAsync(
+            settings.ChestRoutingQueueName!,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            cancellationToken: cancellationToken
+        );
+        foreach (string routingKey in ChestRoutingKeys)
+        {
+            await channel.QueueBindAsync(
+                settings.ChestRoutingQueueName!,
+                settings.ExchangeName,
+                routingKey,
+                cancellationToken: cancellationToken
+            );
+        }
+
+        _chestRouteDeclared = true;
     }
 }

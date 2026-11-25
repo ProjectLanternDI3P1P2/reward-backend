@@ -44,7 +44,7 @@ public sealed class GenerateChestLootCommandHandler(
                 ChestLootOutboxMessages.CreateGenerationLog(
                     request.CommandId,
                     replay,
-                    "REPLAYED",
+                    ChestLootLogOutcomes.Replayed,
                     clock.UtcNow
                 )
             );
@@ -121,7 +121,12 @@ public sealed class GenerateChestLootCommandHandler(
             ChestLootOutboxMessages.CreateGeneratedEvent(request.CommandId, result, now)
         );
         repository.AddOutboxMessage(
-            ChestLootOutboxMessages.CreateGenerationLog(request.CommandId, result, "GENERATED", now)
+            ChestLootOutboxMessages.CreateGenerationLog(
+                request.CommandId,
+                result,
+                ChestLootLogOutcomes.Generated,
+                now
+            )
         );
         return result;
     }

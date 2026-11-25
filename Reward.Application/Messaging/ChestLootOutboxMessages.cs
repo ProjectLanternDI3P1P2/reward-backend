@@ -87,7 +87,7 @@ public static class ChestLootOutboxMessages
             ChestId = log.ChestId,
             Floor = log.Floor,
             Difficulty = log.Difficulty,
-            Outcome = "REJECTED",
+            Outcome = ChestLootLogOutcomes.Rejected,
             Reason = log.Reason,
         };
 
