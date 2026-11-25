@@ -39,7 +39,7 @@ public static class GrpcServiceRegistration
             .Services.AddScoped<IPlaceholderClient, PlaceholderGrpcClient>();
     }
 
-    private static IServiceCollection AddPlayerParticipation(
+    private static void AddPlayerParticipation(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -52,10 +52,8 @@ public static class GrpcServiceRegistration
 
         if (options.UseDevelopmentMock)
         {
-            return services.AddScoped<
-                IPlayerParticipationClient,
-                DevelopmentPlayerParticipationClient
-            >();
+            services.AddScoped<IPlayerParticipationClient, DevelopmentPlayerParticipationClient>();
+            return;
         }
 
         if (!Uri.TryCreate(options.Address, UriKind.Absolute, out _))
@@ -70,7 +68,7 @@ public static class GrpcServiceRegistration
             );
         }
 
-        return services
+        services
             .AddSingleton(Options.Create(options))
             .AddGrpcClient<RewardPlayerService.RewardPlayerServiceClient>(client =>
                 client.Address = new Uri(options.Address)

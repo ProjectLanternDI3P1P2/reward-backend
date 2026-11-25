@@ -4,8 +4,8 @@ public sealed class PlayerGrpcClientOptions
 {
     public const string SectionName = "Grpc:Player";
 
-    /// <summary>Internal gRPC endpoint of the Player service.</summary>
-    public string Address { get; init; } = "http://player:8081";
+    /// <summary>Internal gRPC endpoint of the Player service, set by configuration.</summary>
+    public string Address { get; init; } = string.Empty;
 
     public int TimeoutSeconds { get; init; } = 2;
 
