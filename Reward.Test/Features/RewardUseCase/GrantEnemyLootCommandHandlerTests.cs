@@ -348,7 +348,7 @@ public sealed class GrantEnemyLootCommandHandlerTests
                 .Handle(CreateCommand(participant), TestContext.Current.CancellationToken);
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not applied*");
+        await action.Should().ThrowAsync<RewardConflictException>().WithMessage("*not applied*");
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public sealed class GrantEnemyLootCommandHandlerTests
                 .Handle(CreateCommand(participant), TestContext.Current.CancellationToken);
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("*another run*");
+        await action.Should().ThrowAsync<RewardConflictException>().WithMessage("*another run*");
     }
 
     [Fact]

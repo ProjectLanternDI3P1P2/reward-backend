@@ -3,6 +3,7 @@ using Moq;
 using Reward.Application.Features.InventoryUseCase.ConsumeConsumable;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -109,7 +110,7 @@ public sealed class ConsumeConsumableCommandHandlerTests
                 TestContext.Current.CancellationToken
             );
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action.Should().ThrowAsync<ItemUnavailableException>();
     }
 
     private static Mock<IInventoryRepository> CreateRepository(

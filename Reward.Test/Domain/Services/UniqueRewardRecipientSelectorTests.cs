@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Services;
 using Reward.Domain.ValueObjects;
 
@@ -79,7 +80,7 @@ public sealed class UniqueRewardRecipientSelectorTests
     }
 
     [Fact]
-    public void SelectRecipient_NoEligiblePlayer_ThrowsInvalidOperationException()
+    public void SelectRecipient_NoEligiblePlayer_ThrowsNoEligibleRecipient()
     {
         // Arrange
         ActivityParticipant left = CreateParticipant(ParticipationStatus.Left);
@@ -89,7 +90,7 @@ public sealed class UniqueRewardRecipientSelectorTests
             UniqueRewardRecipientSelector.SelectRecipient([left], new FixedRandomSource(0));
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<NoEligibleRecipientException>();
     }
 
     private static ActivityParticipant CreateParticipant(ParticipationStatus status) =>

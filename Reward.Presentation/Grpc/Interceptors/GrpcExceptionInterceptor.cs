@@ -1,6 +1,7 @@
 using FluentValidation;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using Microsoft.EntityFrameworkCore;
 using Reward.Domain.Exceptions;
 using ILogger = Serilog.ILogger;
 
@@ -46,7 +47,24 @@ public sealed class GrpcExceptionInterceptor(ILogger logger, IHostEnvironment en
             logger.Warning(exception, "gRPC validation error.");
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Validation error."));
         }
-        catch (Exception exception)
+        catch (DomainException exception)
+        {
+            // A full inventory or a replay with a different content is a business refusal,
+            // not a server failure.
+            logger.Warning(exception, "Business rule refused the gRPC operation.");
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, exception.Message));
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            logger.Warning(exception, "Concurrent update detected during a gRPC call.");
+            throw new RpcException(
+                new Status(
+                    StatusCode.Aborted,
+                    "The resource was modified by another request. Retry the call."
+                )
+            );
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.Error(exception, "Unhandled gRPC exception.");
             string detail = environment.IsDevelopment()

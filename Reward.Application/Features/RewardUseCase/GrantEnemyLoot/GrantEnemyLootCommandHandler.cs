@@ -258,15 +258,14 @@ public sealed class GrantEnemyLootCommandHandler(
     {
         if (existing.Status != RewardStatus.Applied)
         {
-            throw new InvalidOperationException(
-                $"Reward '{existing.RewardKey}' exists but is not applied."
-            );
+            throw new RewardConflictException(existing.RewardKey, "exists but is not applied");
         }
 
         if (existing.RunId != request.RunId)
         {
-            throw new InvalidOperationException(
-                $"Reward '{existing.RewardKey}' was already granted for another run."
+            throw new RewardConflictException(
+                existing.RewardKey,
+                "was already granted for another run"
             );
         }
 

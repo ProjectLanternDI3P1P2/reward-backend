@@ -207,7 +207,7 @@ public sealed class GrantRewardCommandHandlerTests
             );
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<RewardConflictException>();
         inventoryRepository.Verify(
             repository => repository.AddItemInstance(It.IsAny<ItemInstance>()),
             Times.Never

@@ -1,6 +1,7 @@
 using MediatR;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 using ILogger = Serilog.ILogger;
@@ -100,15 +101,14 @@ public sealed class GrantRewardCommandHandler(
     {
         if (existing.Status != RewardStatus.Applied)
         {
-            throw new InvalidOperationException(
-                $"Reward '{existing.RewardKey}' exists but is not applied."
-            );
+            throw new RewardConflictException(existing.RewardKey, "exists but is not applied");
         }
 
         if (!HasSameContent(existing, request))
         {
-            throw new InvalidOperationException(
-                $"Reward '{existing.RewardKey}' was already granted with a different content."
+            throw new RewardConflictException(
+                existing.RewardKey,
+                "was already granted with a different content"
             );
         }
 
