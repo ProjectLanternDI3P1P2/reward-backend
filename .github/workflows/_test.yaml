@@ -11,6 +11,20 @@ jobs:
     name: dotnet test
     runs-on: ubuntu-latest
     services:
+      # The RabbitMQ publisher integration test is opt-in through
+      # REWARD_TEST_RABBITMQ_CONNECTION; without a broker it is skipped and its code uncovered.
+      rabbitmq:
+        image: rabbitmq:4-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: reward
+          RABBITMQ_DEFAULT_PASS: reward
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
       postgres:
         image: postgres:17-alpine
         env:
@@ -38,6 +52,7 @@ jobs:
       - name: Run tests
         env:
           REWARD_TEST_DATABASE_CONNECTION: Host=localhost;Port=5432;Database=reward_test;Username=reward
+          REWARD_TEST_RABBITMQ_CONNECTION: amqp://reward:reward@localhost:5672/
         run: dotnet test --solution Reward.Presentation.slnx
 
       - name: Verify production migration command against disposable PostgreSQL
