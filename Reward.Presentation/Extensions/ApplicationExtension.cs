@@ -8,6 +8,7 @@ public static class ApplicationExtension
     public static WebApplication ConfigureStart(this WebApplication app)
     {
         app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseCors(BuilderExtension.GameClientCorsPolicy);
 
         if (!app.Environment.IsDevelopment())
         {
