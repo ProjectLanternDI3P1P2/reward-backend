@@ -1,3 +1,9 @@
+# Keep repo metadata and history out of the build context: it has no
+# business inside an image layer, and .git in particular can carry old
+# commit history beyond what the current working tree exposes.
+.git/
+.idea/
+
 # Leading **/ matters: "obj/" alone only matches the repository root, so the per
 # project obj/ folders were copied in and overwrote the restore done in the image.
 **/bin/

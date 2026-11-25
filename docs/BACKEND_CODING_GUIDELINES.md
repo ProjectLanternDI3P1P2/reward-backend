@@ -167,6 +167,10 @@ Default mappings:
 | Validation failure | 422 |
 | Unexpected technical error | 500 |
 
+A business refusal throws a specific exception deriving from `DomainException`, which is
+mapped to 409 (gRPC `FAILED_PRECONDITION`). Never throw `InvalidOperationException` for a
+business case: it is reserved for technical or configuration failures and maps to 500.
+
 Do not expose stack traces or internal exception details in production.
 
 Unexpected exceptions must be logged.

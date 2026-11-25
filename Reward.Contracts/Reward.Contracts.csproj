@@ -3,8 +3,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- x-release-please-start-version -->
     <Version>2.0.0</Version>
-    <!-- x-release-please-version -->
+    <!-- x-release-please-end -->
     <PackageId>Reward.Contracts</PackageId>
     <Description>Public Protocol Buffers and generated gRPC types exposed by the Reward service.</Description>
     <PackageTags>grpc;protobuf;contracts</PackageTags>
@@ -25,11 +26,13 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\reward_chest_loot_v1.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\reward_enemy_loot_v1.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\reward_inventory_v1.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\reward_placeholder_v1.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\reward_events_v1.proto" GrpcServices="None" />
     <!-- Consumers that use another language can retrieve the source contract from the package. -->
     <None Include="Protos/reward_chest_loot_v1.proto" Pack="true" PackagePath="proto" />
+    <None Include="Protos/reward_enemy_loot_v1.proto" Pack="true" PackagePath="proto" />
     <None Include="Protos/reward_inventory_v1.proto" Pack="true" PackagePath="proto" />
     <None Include="Protos/reward_placeholder_v1.proto" Pack="true" PackagePath="proto" />
     <None Include="Protos/reward_events_v1.proto" Pack="true" PackagePath="proto" />

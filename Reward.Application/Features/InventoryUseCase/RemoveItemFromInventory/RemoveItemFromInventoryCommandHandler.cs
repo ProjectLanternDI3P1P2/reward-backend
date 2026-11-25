@@ -1,6 +1,7 @@
 using MediatR;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 
 namespace Reward.Application.Features.InventoryUseCase.RemoveItemFromInventory;
@@ -32,7 +33,7 @@ public sealed class RemoveItemFromInventoryCommandHandler(IInventoryRepository r
 
         if (itemInstance.Status == ItemInstanceStatus.Reserved)
         {
-            throw new InvalidOperationException("A reserved item cannot be removed.");
+            throw new ItemUnavailableException("A reserved item cannot be removed.");
         }
 
         repository.RemoveItemInstance(itemInstance);

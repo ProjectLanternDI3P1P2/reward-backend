@@ -40,7 +40,7 @@ public sealed class DataSeederTests
             .Should()
             .Be(itemInstancesAfterFirstSeed);
 
-        // Assert the four strict chest contexts and source are independently idempotent.
+        // Assert all four floors and both difficulties are independently idempotent.
         (
             await context.RewardSources.CountAsync(
                 source => source.Name == "CHEST",
@@ -54,12 +54,22 @@ public sealed class DataSeederTests
                 .ThenInclude(rule => rule.Entries)
             .Where(table => table.SourceType == "CHEST" && table.Floor != null)
             .ToListAsync(TestContext.Current.CancellationToken);
-        lootTables.Should().HaveCount(4);
+        lootTables.Should().HaveCount(8);
         lootTables
             .Select(table => (table.Floor, table.Difficulty))
             .Should()
             .BeEquivalentTo(
-                new (int?, string)[] { (1, "NORMAL"), (1, "HARD"), (2, "NORMAL"), (2, "HARD") }
+                new (int?, string)[]
+                {
+                    (1, "NORMAL"),
+                    (1, "HARD"),
+                    (2, "NORMAL"),
+                    (2, "HARD"),
+                    (3, "NORMAL"),
+                    (3, "HARD"),
+                    (4, "NORMAL"),
+                    (4, "HARD"),
+                }
             );
         lootTables
             .Should()
@@ -67,6 +77,18 @@ public sealed class DataSeederTests
         (await context.LootTables.CountAsync(TestContext.Current.CancellationToken))
             .Should()
             .Be(lootTablesAfterFirstSeed);
+
+        // Assert marketplace listings are seeded with a mix of statuses and stay idempotent.
+        List<MarketplaceListing> listings = await context.MarketplaceListings.ToListAsync(
+            TestContext.Current.CancellationToken
+        );
+        listings.Should().NotBeEmpty();
+        listings.Should().Contain(listing => listing.Status == MarketplaceListingStatus.Active);
+        int marketplaceListingsAfterFirstSeed = listings.Count;
+        await DataSeeder.SeedAsync(context, TestContext.Current.CancellationToken);
+        (await context.MarketplaceListings.CountAsync(TestContext.Current.CancellationToken))
+            .Should()
+            .Be(marketplaceListingsAfterFirstSeed);
     }
 
     private static RewardDbContext CreateInMemoryDbContext() =>

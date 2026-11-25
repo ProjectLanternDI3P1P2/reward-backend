@@ -3,6 +3,7 @@ using Moq;
 using Reward.Application.Features.RewardUseCase.AwardUniqueGroupReward;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 using Reward.Domain.ValueObjects;
@@ -187,7 +188,7 @@ public sealed class AwardUniqueGroupRewardCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_SameUniqueRewardWithDifferentQuantity_ThrowsInvalidOperationException()
+    public async Task Handle_SameUniqueRewardWithDifferentQuantity_ThrowsRewardConflict()
     {
         // Arrange
         RewardEntity existing = CreateAwardedReward(first.HeroId, quantity: 2);
@@ -203,7 +204,7 @@ public sealed class AwardUniqueGroupRewardCommandHandlerTests
             handler.Handle(CreateCommand(), TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<RewardConflictException>();
     }
 
     [Fact]
@@ -223,7 +224,7 @@ public sealed class AwardUniqueGroupRewardCommandHandlerTests
             );
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<NoEligibleRecipientException>();
         rewardRepository.Verify(
             repository => repository.Add(It.IsAny<RewardEntity>()),
             Times.Never

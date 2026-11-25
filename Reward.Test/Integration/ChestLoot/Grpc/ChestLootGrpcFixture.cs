@@ -26,6 +26,10 @@ public sealed class ChestLootGrpcFixture : IAsyncLifetime
         return new RewardLootService.RewardLootServiceClient(channel);
     }
 
+    /// <summary>Creates an HTTP client against the same isolated Reward application.</summary>
+    public HttpClient CreateHttpClient() =>
+        factory?.CreateClient() ?? throw new InvalidOperationException("Fixture not initialized.");
+
     public async ValueTask InitializeAsync()
     {
         // Give this collection an isolated migrated PostgreSQL database.

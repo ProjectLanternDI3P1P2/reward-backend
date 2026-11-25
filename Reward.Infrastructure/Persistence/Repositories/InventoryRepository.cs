@@ -61,7 +61,10 @@ public sealed class InventoryRepository(RewardDbContext dbContext) : IInventoryR
         dbContext.MarketplaceListings.AnyAsync(
             listing =>
                 listing.ItemInstanceId == itemInstanceId
-                && (listing.Status == "ACTIVE" || listing.Status == "RESERVED"),
+                && (
+                    listing.Status == MarketplaceListingStatus.Active
+                    || listing.Status == MarketplaceListingStatus.Reserved
+                ),
             cancellationToken
         );
 

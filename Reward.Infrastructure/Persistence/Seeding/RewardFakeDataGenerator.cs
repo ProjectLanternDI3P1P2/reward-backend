@@ -106,31 +106,36 @@ public static class RewardFakeDataGenerator
             CreateInventory("33333333-3333-3333-3333-333333333333", now),
         ];
 
-    /// <summary>Creates the four reproducible CHEST contexts used during local development.</summary>
+    /// <summary>Creates NORMAL and HARD CHEST contexts for the four dungeon floors.</summary>
     public static IReadOnlyList<LootTable> CreateChestLootTables(
         IReadOnlyList<Item> items,
         DateTimeOffset now
     )
     {
         // Give harder and later contexts more draws while retaining the database default of one.
-        (int Floor, string Difficulty, int DrawCount)[] contexts =
+        (int Floor, ChestLootDifficulty Difficulty, int DrawCount)[] contexts =
         [
-            (1, "NORMAL", 2),
-            (1, "HARD", 3),
-            (2, "NORMAL", 3),
-            (2, "HARD", 4),
+            (1, ChestLootDifficulty.Normal, 2),
+            (1, ChestLootDifficulty.Hard, 3),
+            (2, ChestLootDifficulty.Normal, 3),
+            (2, ChestLootDifficulty.Hard, 4),
+            (3, ChestLootDifficulty.Normal, 4),
+            (3, ChestLootDifficulty.Hard, 5),
+            (4, ChestLootDifficulty.Normal, 5),
+            (4, ChestLootDifficulty.Hard, 6),
         ];
 
         // Build one complete weighted graph for each exact dungeon context.
         return contexts
             .Select(context =>
             {
+                string difficulty = context.Difficulty.ToCode();
                 var table = new LootTable
                 {
                     Id = Guid.NewGuid(),
-                    Name = $"Chest floor {context.Floor} {context.Difficulty}",
+                    Name = $"Chest floor {context.Floor} {difficulty}",
                     Floor = context.Floor,
-                    Difficulty = context.Difficulty,
+                    Difficulty = difficulty,
                     SourceType = "CHEST",
                     DrawCount = context.DrawCount,
                     CreatedAt = now,
@@ -175,6 +180,56 @@ public static class RewardFakeDataGenerator
                 return table;
             })
             .ToList();
+    }
+
+    /// <summary>Creates a mix of active and inactive marketplace listings so filtering is testable.</summary>
+    public static IReadOnlyList<MarketplaceListing> CreateMarketplaceListings(
+        IReadOnlyList<Inventory> inventories,
+        IReadOnlyList<ItemInstance> availableInstances,
+        DateTimeOffset now
+    )
+    {
+        var faker = new Faker("en") { Random = new Randomizer(381) };
+        string[] statuses =
+        [
+            MarketplaceListingStatus.Active,
+            MarketplaceListingStatus.Active,
+            MarketplaceListingStatus.Active,
+            MarketplaceListingStatus.Sold,
+            MarketplaceListingStatus.Cancelled,
+            MarketplaceListingStatus.Expired,
+        ];
+        var listings = new List<MarketplaceListing>();
+
+        foreach (Inventory inventory in inventories)
+        {
+            IEnumerable<ItemInstance> candidates = availableInstances
+                .Where(instance => instance.InventoryId == inventory.Id)
+                .Take(statuses.Length);
+
+            foreach (
+                (ItemInstance itemInstance, string status) in candidates.Zip(
+                    faker.Random.Shuffle(statuses)
+                )
+            )
+            {
+                listings.Add(
+                    new MarketplaceListing
+                    {
+                        Id = Guid.NewGuid(),
+                        ItemInstanceId = itemInstance.Id,
+                        SellerId = inventory.HeroId,
+                        Quantity = itemInstance.Quantity,
+                        Price = faker.Random.Decimal(5, 500),
+                        Status = status,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                    }
+                );
+            }
+        }
+
+        return listings;
     }
 
     private static Rarity CreateRarity(
