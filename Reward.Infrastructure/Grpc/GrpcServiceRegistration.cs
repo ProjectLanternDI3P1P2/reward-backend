@@ -44,34 +44,38 @@ public static class GrpcServiceRegistration
         IConfiguration configuration
     )
     {
-        PlayerGrpcClientOptions options =
-            configuration
-                .GetSection(PlayerGrpcClientOptions.SectionName)
-                .Get<PlayerGrpcClientOptions>()
-            ?? new PlayerGrpcClientOptions();
-
-        if (options.UseDevelopmentMock)
+        IConfigurationSection section = configuration.GetSection(
+            PlayerGrpcClientOptions.SectionName
+        );
+        if (section.GetValue<bool>(nameof(PlayerGrpcClientOptions.UseDevelopmentMock)))
         {
             services.AddScoped<IPlayerParticipationClient, DevelopmentPlayerParticipationClient>();
             return;
         }
 
-        if (!Uri.TryCreate(options.Address, UriKind.Absolute, out _))
-        {
-            throw new InvalidOperationException("Grpc:Player:Address must be an absolute URI.");
-        }
-
-        if (options.TimeoutSeconds <= 0)
-        {
-            throw new InvalidOperationException(
+        // Validated when the API starts, not at registration: the migrate-only command builds
+        // the host without starting it and must not need the Player address.
+        services
+            .AddOptions<PlayerGrpcClientOptions>()
+            .Bind(section)
+            .Validate(
+                options => Uri.TryCreate(options.Address, UriKind.Absolute, out _),
+                "Grpc:Player:Address must be an absolute URI."
+            )
+            .Validate(
+                options => options.TimeoutSeconds > 0,
                 "Grpc:Player:TimeoutSeconds must be greater than zero."
-            );
-        }
+            )
+            .ValidateOnStart();
 
         services
-            .AddSingleton(Options.Create(options))
-            .AddGrpcClient<RewardPlayerService.RewardPlayerServiceClient>(client =>
-                client.Address = new Uri(options.Address)
+            .AddGrpcClient<RewardPlayerService.RewardPlayerServiceClient>(
+                (provider, client) =>
+                    client.Address = new Uri(
+                        provider
+                            .GetRequiredService<IOptions<PlayerGrpcClientOptions>>()
+                            .Value.Address
+                    )
             )
             .Services.AddScoped<IPlayerParticipationClient, PlayerParticipationGrpcClient>();
     }
