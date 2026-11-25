@@ -9,6 +9,7 @@ public sealed record GenerateChestLootResult(
     int Floor,
     string Difficulty,
     bool AlreadyGenerated,
+    string State,
     IReadOnlyList<GeneratedChestLootItem> Items
 );
 
