@@ -19,7 +19,7 @@ public sealed class RemoveItemFromInventoryIntegrationTests(InventoryControllerF
         Guid itemInstanceId = await SeedItemInstanceAsync(heroId, ItemInstanceStatus.Available);
 
         HttpResponseMessage response = await Fixture.HttpClient.DeleteAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}",
             TestContext.Current.CancellationToken
         );
 
@@ -34,7 +34,7 @@ public sealed class RemoveItemFromInventoryIntegrationTests(InventoryControllerF
         Guid itemInstanceId = await SeedItemInstanceAsync(heroId, ItemInstanceStatus.Reserved);
 
         HttpResponseMessage response = await Fixture.HttpClient.DeleteAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}",
             TestContext.Current.CancellationToken
         );
 
@@ -53,7 +53,7 @@ public sealed class RemoveItemFromInventoryIntegrationTests(InventoryControllerF
         );
 
         HttpResponseMessage response = await Fixture.HttpClient.DeleteAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}",
             TestContext.Current.CancellationToken
         );
 
@@ -67,7 +67,7 @@ public sealed class RemoveItemFromInventoryIntegrationTests(InventoryControllerF
     {
         Guid heroId = Guid.NewGuid();
         Guid itemInstanceId = await SeedItemInstanceAsync(heroId, ItemInstanceStatus.Available);
-        string path = $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}";
+        string path = $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}";
 
         HttpResponseMessage firstResponse = await Fixture.HttpClient.DeleteAsync(
             path,
@@ -93,7 +93,7 @@ public sealed class RemoveItemFromInventoryIntegrationTests(InventoryControllerF
         );
 
         HttpResponseMessage response = await Fixture.HttpClient.DeleteAsync(
-            $"/api/v1/heroes/{Guid.NewGuid()}/inventory/items/{itemInstanceId}",
+            $"/api/rewards/v1/heroes/{Guid.NewGuid()}/inventory/items/{itemInstanceId}",
             TestContext.Current.CancellationToken
         );
 

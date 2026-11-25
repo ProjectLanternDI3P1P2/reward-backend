@@ -22,7 +22,7 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
 
         // Act
         HttpResponseMessage response = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items",
             new AddItemToInventoryRequest(itemId, "reward-1"),
             TestContext.Current.CancellationToken
         );
@@ -53,12 +53,12 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
 
         // Act
         HttpResponseMessage firstResponse = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items",
             request,
             TestContext.Current.CancellationToken
         );
         HttpResponseMessage retryResponse = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items",
             request,
             TestContext.Current.CancellationToken
         );
@@ -90,7 +90,7 @@ public sealed class AddItemToInventoryIntegrationTests(InventoryControllerFixtur
 
         // Act
         HttpResponseMessage response = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items",
             new AddItemToInventoryRequest(itemId, "reward-2"),
             TestContext.Current.CancellationToken
         );

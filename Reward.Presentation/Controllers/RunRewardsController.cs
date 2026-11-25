@@ -5,7 +5,7 @@ using Reward.Application.Features.RewardUseCase.GetRunRewardDistribution;
 namespace Reward.Presentation.Controllers;
 
 [ApiController]
-[Route("api/v1/runs/{dungeonRunId:guid}/rewards")]
+[Route("api/rewards/v1/runs/{dungeonRunId:guid}/rewards")]
 public sealed class RunRewardsController(ISender sender) : ControllerBase
 {
     [HttpGet]

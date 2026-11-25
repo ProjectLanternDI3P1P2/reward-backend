@@ -11,7 +11,7 @@ using Reward.Presentation.DTO;
 namespace Reward.Presentation.Controllers;
 
 [ApiController]
-[Route("api/v1/heroes/{heroId:guid}/inventory")]
+[Route("api/rewards/v1/heroes/{heroId:guid}/inventory")]
 public sealed class InventoryController(ISender sender) : ControllerBase
 {
     [HttpPost("items")]
@@ -28,7 +28,7 @@ public sealed class InventoryController(ISender sender) : ControllerBase
 
         return result.AlreadyExists
             ? Ok(result)
-            : Created($"/api/v1/heroes/{heroId}/inventory", result);
+            : Created($"/api/rewards/v1/heroes/{heroId}/inventory", result);
     }
 
     [HttpGet]

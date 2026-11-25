@@ -9,7 +9,7 @@ using Reward.Presentation.DTO;
 namespace Reward.Presentation.Controllers;
 
 [ApiController]
-[Route("api/v1/chest-loot")]
+[Route("api/rewards/v1/chest-loot")]
 public sealed class ChestLootController(ISender sender, IChestLootLogWriter logWriter)
     : ControllerBase
 {

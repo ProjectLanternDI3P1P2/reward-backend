@@ -24,7 +24,7 @@ public sealed class GetPlaceholderByIdIntegrationTests(PlaceholdersControllerFix
         }
 
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            $"/api/v1/placeholders/{placeholderId}",
+            $"/api/rewards/v1/placeholders/{placeholderId}",
             TestContext.Current.CancellationToken
         );
 
@@ -39,7 +39,7 @@ public sealed class GetPlaceholderByIdIntegrationTests(PlaceholdersControllerFix
     public async Task GetById_WhenPlaceholderDoesNotExist_ReturnsNotFound()
     {
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            $"/api/v1/placeholders/{Guid.NewGuid()}",
+            $"/api/rewards/v1/placeholders/{Guid.NewGuid()}",
             TestContext.Current.CancellationToken
         );
 

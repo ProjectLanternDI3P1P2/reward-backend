@@ -116,7 +116,7 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
     {
         // Act
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            "/api/v1/runs/not-a-guid/rewards",
+            "/api/rewards/v1/runs/not-a-guid/rewards",
             TestContext.Current.CancellationToken
         );
 
@@ -161,7 +161,7 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
 
     private async Task<HttpResponseMessage> GetAsync(Guid requestedRunId) =>
         await Fixture.HttpClient.GetAsync(
-            $"/api/v1/runs/{requestedRunId}/rewards",
+            $"/api/rewards/v1/runs/{requestedRunId}/rewards",
             TestContext.Current.CancellationToken
         );
 

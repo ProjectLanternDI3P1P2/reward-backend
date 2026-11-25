@@ -21,7 +21,7 @@ public sealed class GetHeroInventoryIntegrationTests(InventoryControllerFixture 
         await SeedInventoryAsync(heroId, swordId, potionId);
 
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            $"/api/v1/heroes/{heroId}/inventory",
+            $"/api/rewards/v1/heroes/{heroId}/inventory",
             TestContext.Current.CancellationToken
         );
 
@@ -66,7 +66,7 @@ public sealed class GetHeroInventoryIntegrationTests(InventoryControllerFixture 
     public async Task GetByHeroId_WhenInventoryDoesNotExist_ReturnsNotFound()
     {
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            $"/api/v1/heroes/{Guid.NewGuid()}/inventory",
+            $"/api/rewards/v1/heroes/{Guid.NewGuid()}/inventory",
             TestContext.Current.CancellationToken
         );
 
