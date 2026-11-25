@@ -23,6 +23,26 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
     private readonly ActivityParticipant second = CreateParticipant(ParticipationStatus.Dead);
     private readonly ActivityParticipant left = CreateParticipant(ParticipationStatus.Left);
 
+    [Theory]
+    [InlineData(null, HttpStatusCode.Unauthorized)]
+    [InlineData("outsider", HttpStatusCode.Forbidden)]
+    [InlineData("player-unavailable", HttpStatusCode.ServiceUnavailable)]
+    public async Task Get_WithoutConfirmedParticipation_DoesNotReturnRewards(
+        string? identity,
+        HttpStatusCode expectedStatus
+    )
+    {
+        Catalogue catalogue = await SeedAsync();
+        await DistributeAsync(runId, bossId, catalogue);
+
+        using HttpResponseMessage response = await GetAsync(runId, identity);
+
+        response.StatusCode.Should().Be(expectedStatus);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
+            .Should()
+            .NotContain("Blazing Aegis");
+    }
+
     [Fact]
     public async Task Get_AfterADistribution_ListsUniqueAndSharedRewardsWithTheirRecipients()
     {
@@ -159,11 +179,19 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
         }
     }
 
-    private async Task<HttpResponseMessage> GetAsync(Guid requestedRunId) =>
-        await Fixture.HttpClient.GetAsync(
+    private async Task<HttpResponseMessage> GetAsync(
+        Guid requestedRunId,
+        string? identity = "participant"
+    )
+    {
+        using HttpClient client = Fixture.HttpClient;
+        if (identity is not null)
+            client.DefaultRequestHeaders.Add("X-User-Id", identity);
+        return await client.GetAsync(
             $"/api/rewards/v1/runs/{requestedRunId}/rewards",
             TestContext.Current.CancellationToken
         );
+    }
 
     private static async Task<DistributionResponse> ReadAsync(HttpResponseMessage response) =>
         (

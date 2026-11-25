@@ -1,3 +1,4 @@
+using Reward.Presentation.Controllers;
 using Reward.Presentation.Extensions.LogExtension;
 using Reward.Presentation.Grpc.Interceptors;
 using Reward.Presentation.Middleware;
@@ -24,7 +25,18 @@ public static class BuilderExtension
         builder.Services.AddTransient<ExceptionHandlingMiddleware>();
         builder.Services.AddTransient<CorrelationIdInterceptor>();
         builder.Services.AddTransient<GrpcExceptionInterceptor>();
-        builder.Services.AddHttpClient();
+        builder
+            .Services.AddHttpClient(
+                RunRewardsController.PlayerMembershipClient,
+                client =>
+                {
+                    client.BaseAddress = new Uri(builder.Configuration["Player:BaseUrl"]!);
+                    client.Timeout = TimeSpan.FromSeconds(5);
+                }
+            )
+            .ConfigurePrimaryHttpMessageHandler(() =>
+                new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false }
+            );
 
         return builder;
     }
