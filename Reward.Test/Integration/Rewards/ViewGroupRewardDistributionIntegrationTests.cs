@@ -40,7 +40,8 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
         response.StatusCode.Should().Be(expectedStatus);
         (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
             .Should()
-            .NotContain("Blazing Aegis");
+            .NotContain("Blazing Aegis")
+            .And.NotContain("viewerPlayerId");
     }
 
     [Fact]
@@ -57,6 +58,7 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         DistributionResponse body = await ReadAsync(response);
         body.DungeonRunId.Should().Be(runId);
+        body.ViewerPlayerId.Should().Be(RewardGrantFixture.ViewerPlayerId);
         CauseResponse cause = body.Distributions.Should().ContainSingle().Subject;
         cause.SourceType.Should().Be("BOSS");
         cause.CauseId.Should().Be(bossId);
@@ -100,7 +102,9 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await ReadAsync(response)).Distributions.Should().BeEmpty();
+        DistributionResponse body = await ReadAsync(response);
+        body.ViewerPlayerId.Should().Be(RewardGrantFixture.ViewerPlayerId);
+        body.Distributions.Should().BeEmpty();
     }
 
     [Fact]
@@ -322,7 +326,8 @@ public sealed class ViewGroupRewardDistributionIntegrationTests(RewardGrantFixtu
 
     private sealed record DistributionResponse(
         Guid DungeonRunId,
-        List<CauseResponse> Distributions
+        List<CauseResponse> Distributions,
+        Guid? ViewerPlayerId
     );
 
     private sealed record CauseResponse(

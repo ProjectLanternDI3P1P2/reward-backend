@@ -1,9 +1,13 @@
 namespace Reward.Application.Features.RewardUseCase.GetRunRewardDistribution;
 
 /// <summary>The group rewards of one run, grouped by the event that earned them.</summary>
+/// <param name="DungeonRunId">The run whose rewards were distributed.</param>
+/// <param name="Distributions">The rewards grouped by event.</param>
+/// <param name="ViewerPlayerId">The caller's internal Player ID, when available.</param>
 public sealed record RunRewardDistribution(
     Guid DungeonRunId,
-    IReadOnlyList<RewardDistributionCause> Distributions
+    IReadOnlyList<RewardDistributionCause> Distributions,
+    Guid? ViewerPlayerId
 );
 
 /// <summary>The rewards distributed for one combat, boss or chest of the run.</summary>

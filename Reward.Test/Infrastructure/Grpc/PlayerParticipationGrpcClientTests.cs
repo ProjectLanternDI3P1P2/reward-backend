@@ -3,6 +3,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Options;
 using Moq;
 using Reward.Application.Exceptions;
+using Reward.Application.Ports;
 using Reward.Contracts.V1;
 using Reward.Infrastructure.Grpc.Clients;
 using Reward.Infrastructure.Grpc.Configuration;
@@ -11,14 +12,21 @@ namespace Reward.Test.Infrastructure.Grpc;
 
 public sealed class PlayerParticipationGrpcClientTests
 {
+    private const string PlayerId = "980ec1ab-c080-4bfb-9ab5-9baea1305588";
     private readonly Guid runId = Guid.NewGuid();
     private readonly Mock<RewardPlayerService.RewardPlayerServiceClient> grpcClient = new();
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task IsRunParticipantAsync_PlayerAnswers_ReturnsItsAnswerForTheGivenUserAndRun(
-        bool isParticipant
+    [InlineData(true, PlayerId, PlayerId)]
+    [InlineData(false, "", null)]
+    [InlineData(false, PlayerId, null)]
+    [InlineData(true, "", null)]
+    [InlineData(true, "invalid-id", null)]
+    [InlineData(true, "00000000-0000-0000-0000-000000000000", null)]
+    public async Task GetRunParticipationAsync_PlayerAnswers_ReturnsParticipationAndKnownPlayerId(
+        bool isParticipant,
+        string replyPlayerId,
+        string? expectedPlayerId
     )
     {
         // Arrange
@@ -38,14 +46,27 @@ public sealed class PlayerParticipationGrpcClientTests
                     callOptions = options;
                 }
             )
-            .Returns(Reply(new GetRunParticipationReply { IsParticipant = isParticipant }));
+            .Returns(
+                Reply(
+                    new GetRunParticipationReply
+                    {
+                        IsParticipant = isParticipant,
+                        PlayerId = replyPlayerId,
+                    }
+                )
+            );
 
         // Act
-        bool result = await CreateClient()
-            .IsRunParticipantAsync("keycloak-user", runId, TestContext.Current.CancellationToken);
+        RunParticipation result = await CreateClient()
+            .GetRunParticipationAsync(
+                "keycloak-user",
+                runId,
+                TestContext.Current.CancellationToken
+            );
 
         // Assert
-        result.Should().Be(isParticipant);
+        result.IsParticipant.Should().Be(isParticipant);
+        result.PlayerId.Should().Be(expectedPlayerId is null ? null : Guid.Parse(expectedPlayerId));
         sent!.ExternalUserId.Should().Be("keycloak-user");
         sent.DungeonRunId.Should().Be(runId.ToString());
         callOptions.Deadline.Should().NotBeNull().And.BeAfter(DateTime.UtcNow);
@@ -55,7 +76,7 @@ public sealed class PlayerParticipationGrpcClientTests
     [InlineData(StatusCode.Unavailable)]
     [InlineData(StatusCode.DeadlineExceeded)]
     [InlineData(StatusCode.Unimplemented)]
-    public async Task IsRunParticipantAsync_PlayerCannotAnswer_ThrowsDependencyUnavailable(
+    public async Task GetRunParticipationAsync_PlayerCannotAnswer_ThrowsDependencyUnavailable(
         StatusCode statusCode
     )
     {
@@ -72,7 +93,7 @@ public sealed class PlayerParticipationGrpcClientTests
         // Act
         Func<Task> act = () =>
             CreateClient()
-                .IsRunParticipantAsync(
+                .GetRunParticipationAsync(
                     "keycloak-user",
                     runId,
                     TestContext.Current.CancellationToken

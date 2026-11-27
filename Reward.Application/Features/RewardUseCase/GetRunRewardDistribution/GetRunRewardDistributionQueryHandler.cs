@@ -25,12 +25,12 @@ public sealed class GetRunRewardDistributionQueryHandler(
 
         // Only the participants of the run may see who received what. Anyone else gets the
         // same answer as for an unknown run, so the existence of the run is not disclosed.
-        bool isParticipant = await participationClient.IsRunParticipantAsync(
+        RunParticipation participation = await participationClient.GetRunParticipationAsync(
             request.ExternalUserId,
             request.DungeonRunId,
             cancellationToken
         );
-        if (!isParticipant)
+        if (!participation.IsParticipant)
         {
             throw new KeyNotFoundException(
                 $"No reward distribution is available for run '{request.DungeonRunId}'."
@@ -55,7 +55,11 @@ public sealed class GetRunRewardDistributionQueryHandler(
             ))
             .ToList();
 
-        return new RunRewardDistribution(request.DungeonRunId, distributions);
+        return new RunRewardDistribution(
+            request.DungeonRunId,
+            distributions,
+            participation.PlayerId
+        );
     }
 
     // A shared reward is stored once per hero; it is shown once, with all its recipients.
