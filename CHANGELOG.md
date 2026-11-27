@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/v1.4.0...v1.4.1) (2026-11-27)
+
+
+### Fixed
+
+* **cd:** pin the shared workflow that pushes with docker push ([3f1c8e5](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/3f1c8e54683ab7b335226922ad87415b866b85ed))
+* **cd:** pin the shared workflow that pushes with docker push ([e8e0752](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/e8e075256c37c389727422ac3f1a630c791acda9))
+
 ## [1.4.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/v1.3.0...v1.4.0) (2026-11-27)
 
 
