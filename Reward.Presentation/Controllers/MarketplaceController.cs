@@ -5,7 +5,7 @@ using Reward.Application.Features.MarketplaceUseCase.GetActiveMarketplaceListing
 namespace Reward.Presentation.Controllers;
 
 [ApiController]
-[Route("api/v1/marketplace/listings")]
+[Route("api/rewards/v1/marketplace/listings")]
 public sealed class MarketplaceController(ISender sender) : ControllerBase
 {
     [HttpGet]

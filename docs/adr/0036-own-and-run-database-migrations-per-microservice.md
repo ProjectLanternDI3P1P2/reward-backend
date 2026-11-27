@@ -32,3 +32,20 @@ part of rollout.
 
 Each service can evolve its schema independently without coordinating a shared
 migration project.
+
+## GitOps migration command
+
+The published API image accepts `--migrate`. It applies this service's pending
+EF migrations and exits without starting the API or seeding Development data.
+A missing migration assembly or database/configuration error exits nonzero.
+Normal production startup still does not migrate the database.
+
+GitOps runs this mode in a dedicated PreSync Job using the same immutable image
+as the Deployment, with schema-specific connection settings and a mounted
+password file. Existing EF migration locking serializes runs for the same
+migration history. Review schema compatibility with the currently running API
+before release; rolling back an image never rolls back the schema.
+
+The test workflow exercises the published command on a disposable PostgreSQL
+database, including repeat execution and missing-credentials failure. No
+production database is used by that check.

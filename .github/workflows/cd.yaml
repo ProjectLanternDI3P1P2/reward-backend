@@ -1,26 +1,28 @@
 name: CD - Publish and promote image
 
+# One release = one build. release-please creates the vX.Y.Z tag when the release
+# pull request is merged; this tag is the only trigger, so each version is built,
+# scanned, signed and promoted exactly once (no main-latest / main-<sha> duplicates).
 on:
   push:
-    branches: [main]
     tags: ["v*"]
-  workflow_dispatch:
 
 concurrency:
   group: cd-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   delivery:
-    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: read
-    uses: ProjectLanternDI3P1P2/platform-gitops/.github/workflows/publish-and-promote.yaml@9d823620501406e8b7ffccba742e73ab4d04879e # Harbor 10.4.111.200:18443
+    uses: ProjectLanternDI3P1P2/platform-gitops/.github/workflows/publish-and-promote.yaml@ad88ca61eefa60732975f3263d0af2dcd72b99ba # scan gate + cosign + provenance
     with:
       application: rewards
       image: 10.4.111.200:18443/lantern/reward-backend
     secrets:
       HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
       HARBOR_TOKEN: ${{ secrets.HARBOR_TOKEN }}
-      GITOPS_DISPATCH_TOKEN: ${{ secrets.GITOPS_DISPATCH_TOKEN }}
+      GITOPS_DISPATCH_TOKEN: ${{ secrets.GITOPS_DISPATCH_TOKEN2 }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}

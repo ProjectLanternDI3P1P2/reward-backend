@@ -23,7 +23,7 @@ public sealed class GetActiveMarketplaceListingsIntegrationTests(
 
         // Act
         HttpResponseMessage response = await Fixture.HttpClient.GetAsync(
-            "/api/v1/marketplace/listings",
+            "/api/rewards/v1/marketplace/listings",
             TestContext.Current.CancellationToken
         );
 

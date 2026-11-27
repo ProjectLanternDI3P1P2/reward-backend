@@ -3,6 +3,7 @@ using Moq;
 using Reward.Application.Features.InventoryUseCase.AddItemToInventory;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -143,7 +144,7 @@ public sealed class AddItemToInventoryCommandHandlerTests
         // Assert
         await action
             .Should()
-            .ThrowAsync<InvalidOperationException>()
+            .ThrowAsync<InventoryCapacityExceededException>()
             .WithMessage("*item capacity of 40*");
         inventory.ItemInstances.Should().HaveCount(Inventory.MaximumItemSlots);
         repository.Verify(
@@ -166,7 +167,10 @@ public sealed class AddItemToInventoryCommandHandlerTests
         Action action = () => inventory.Receive(CreateItemInstance("POTION"));
 
         // Assert
-        action.Should().Throw<InvalidOperationException>().WithMessage("*potion capacity of 20*");
+        action
+            .Should()
+            .Throw<InventoryCapacityExceededException>()
+            .WithMessage("*potion capacity of 20*");
         inventory.ItemInstances.Should().HaveCount(Inventory.MaximumPotionSlots);
     }
 

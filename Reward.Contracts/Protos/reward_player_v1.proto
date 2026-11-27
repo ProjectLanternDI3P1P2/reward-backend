@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package reward.v1;
+
+option csharp_namespace = "Reward.Contracts.V1";
+
+// Contract owned by the Reward microservice and implemented by the Player
+// microservice, which owns players and game session participants
+// (ADR-GLOB-011). Reward calls it before exposing data that belongs to the
+// participants of a dungeon run. Field numbers are permanent: do not reuse a
+// deleted number; reserve it instead.
+service RewardPlayerService {
+  // Tells whether the authenticated user took part in the given dungeon run.
+  // An unknown user or run is not an error: it answers is_participant = false.
+  rpc GetRunParticipation (GetRunParticipationRequest) returns (GetRunParticipationReply);
+}
+
+message GetRunParticipationRequest {
+  // Trusted identity injected by the API Gateway as X-User-Id (Keycloak subject).
+  string external_user_id = 1;
+  // RFC 4122 textual UUID of the dungeon run referenced by the game session.
+  string dungeon_run_id = 2;
+}
+
+message GetRunParticipationReply {
+  bool is_participant = 1;
+  // RFC 4122 textual UUID of the matching player; empty when is_participant is false.
+  string player_id = 2;
+}

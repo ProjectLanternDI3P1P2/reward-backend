@@ -4,6 +4,7 @@ using Reward.Application.Features.InventoryUseCase.EquipItem;
 using Reward.Application.Ports;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -128,7 +129,7 @@ public sealed class EquipItemCommandHandlerTests
                 TestContext.Current.CancellationToken
             );
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action.Should().ThrowAsync<ItemUnavailableException>();
         repository.Verify(
             repository => repository.AddEquipment(It.IsAny<Equipment>()),
             Times.Never
@@ -149,7 +150,7 @@ public sealed class EquipItemCommandHandlerTests
                 TestContext.Current.CancellationToken
             );
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action.Should().ThrowAsync<ItemUnavailableException>();
         repository.Verify(
             repository => repository.AddEquipment(It.IsAny<Equipment>()),
             Times.Never
@@ -170,7 +171,7 @@ public sealed class EquipItemCommandHandlerTests
                 TestContext.Current.CancellationToken
             );
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action.Should().ThrowAsync<ItemNotEquippableException>();
     }
 
     [Fact]
@@ -187,7 +188,7 @@ public sealed class EquipItemCommandHandlerTests
                 TestContext.Current.CancellationToken
             );
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action.Should().ThrowAsync<ItemNotEquippableException>();
     }
 
     private static EquipItemCommandHandler CreateHandler(Mock<IInventoryRepository> repository)

@@ -32,11 +32,22 @@ public sealed class RewardConfiguration : IEntityTypeConfiguration<RewardEntity>
                 status => status.ToCode(),
                 value => Enum.Parse<RewardStatus>(value, ignoreCase: true)
             );
+        builder
+            .Property(x => x.Distribution)
+            .HasColumnName("distribution")
+            .HasDefaultValue(RewardDistribution.Individual)
+            .HasConversion(
+                distribution => distribution.ToCode(),
+                value => value.ToRewardDistribution()
+            );
+        builder.Property(x => x.CauseId).HasColumnName("cause_id");
+        builder.Property(x => x.RecipientPlayerId).HasColumnName("recipient_player_id");
         builder.Property(x => x.RewardKey).HasColumnName("reward_key");
         builder.Property(x => x.XpAmount).HasColumnName("xp_amount");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.HasIndex(x => x.RewardKey).IsUnique();
         builder.HasIndex(x => x.HeroId);
+        builder.HasIndex(x => x.RunId);
         builder
             .HasOne(x => x.RewardSource)
             .WithMany()

@@ -10,6 +10,13 @@ public sealed class Reward
     public Guid RewardSourceId { get; set; }
     public RewardType Type { get; set; }
     public RewardStatus Status { get; set; }
+    public RewardDistribution Distribution { get; set; }
+
+    /// <summary>The game event (combat, boss, chest) that earned the reward, when known.</summary>
+    public Guid? CauseId { get; set; }
+
+    /// <summary>The player behind <see cref="HeroId"/>, when the caller provided it.</summary>
+    public Guid? RecipientPlayerId { get; set; }
     public string RewardKey { get; set; } = string.Empty;
     public int XpAmount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

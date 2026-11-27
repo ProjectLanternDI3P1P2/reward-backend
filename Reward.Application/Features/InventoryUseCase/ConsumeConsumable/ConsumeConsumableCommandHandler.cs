@@ -1,6 +1,7 @@
 using MediatR;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 using Reward.Domain.Services;
 
@@ -57,17 +58,17 @@ public sealed class ConsumeConsumableCommandHandler(IInventoryRepository reposit
         ItemCategory category = itemInstance.Item.Category.Label.ToItemCategory();
         if (!category.IsConsumable())
         {
-            throw new InvalidOperationException("Only consumables can be consumed.");
+            throw new ItemNotConsumableException("Only consumables can be consumed.");
         }
 
         if (itemInstance.Status == ItemInstanceStatus.Reserved)
         {
-            throw new InvalidOperationException("A reserved consumable cannot be consumed.");
+            throw new ItemUnavailableException("A reserved consumable cannot be consumed.");
         }
 
         if (itemInstance.Quantity <= 0)
         {
-            throw new InvalidOperationException("A consumable must have a positive quantity.");
+            throw new ItemNotConsumableException("A consumable must have a positive quantity.");
         }
 
         int remainingQuantity = itemInstance.Quantity - 1;

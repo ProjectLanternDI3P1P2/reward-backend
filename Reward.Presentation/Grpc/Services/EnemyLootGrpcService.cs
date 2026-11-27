@@ -19,17 +19,11 @@ public sealed class EnemyLootGrpcService(ISender sender)
     {
         GrantEnemyLootCommand command = ToCommand(request);
 
-        GrantEnemyLootResult result;
-        try
-        {
-            result = await sender.Send<GrantEnemyLootResult>(command, context.CancellationToken);
-        }
-        catch (InvalidOperationException exception)
-        {
-            // A full inventory or a replay with a different context is a business conflict,
-            // not a server failure.
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, exception.Message));
-        }
+        // Business refusals are mapped to FAILED_PRECONDITION by GrpcExceptionInterceptor.
+        GrantEnemyLootResult result = await sender.Send<GrantEnemyLootResult>(
+            command,
+            context.CancellationToken
+        );
 
         return ToReply(result);
     }

@@ -19,7 +19,7 @@ public sealed class ConsumeConsumableIntegrationTests(InventoryControllerFixture
         Guid heroId = Guid.NewGuid();
         Guid itemInstanceId = await SeedConsumableAsync(heroId, quantity: 2);
         var request = new ConsumeRequest("consume-1");
-        string path = $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/consume";
+        string path = $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/consume";
 
         HttpResponseMessage firstResponse = await Fixture.HttpClient.PostAsJsonAsync(
             path,
@@ -58,7 +58,7 @@ public sealed class ConsumeConsumableIntegrationTests(InventoryControllerFixture
         Guid itemInstanceId = await SeedConsumableAsync(heroId, 2, ItemInstanceStatus.Reserved);
 
         HttpResponseMessage response = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/consume",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/consume",
             new ConsumeRequest("consume-1"),
             TestContext.Current.CancellationToken
         );
@@ -74,7 +74,7 @@ public sealed class ConsumeConsumableIntegrationTests(InventoryControllerFixture
         Guid itemInstanceId = await SeedConsumableAsync(heroId, quantity: 1);
 
         HttpResponseMessage response = await Fixture.HttpClient.PostAsJsonAsync(
-            $"/api/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/consume",
+            $"/api/rewards/v1/heroes/{heroId}/inventory/items/{itemInstanceId}/consume",
             new ConsumeRequest("consume-1"),
             TestContext.Current.CancellationToken
         );

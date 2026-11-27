@@ -3,6 +3,7 @@ using Moq;
 using Reward.Application.Features.InventoryUseCase.RemoveItemFromInventory;
 using Reward.Domain.Entities;
 using Reward.Domain.Enums;
+using Reward.Domain.Exceptions;
 using Reward.Domain.Repositories;
 
 namespace Reward.Test.Features.InventoryUseCase;
@@ -68,7 +69,7 @@ public sealed class RemoveItemFromInventoryCommandHandlerTests
                 TestContext.Current.CancellationToken
             );
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        await action.Should().ThrowAsync<ItemUnavailableException>();
         repository.Verify(
             repository => repository.RemoveItemInstance(It.IsAny<ItemInstance>()),
             Times.Never

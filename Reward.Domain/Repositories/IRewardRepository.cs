@@ -15,5 +15,14 @@ public interface IRewardRepository
     /// </summary>
     Task LockKeyAsync(string rewardKey, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Gets the applied rewards distributed among the participants of a run (unique or
+    /// shared), with their items. Individual rewards, such as chests, are excluded.
+    /// </summary>
+    Task<IReadOnlyList<RewardEntity>> GetGroupRewardsByRunAsync(
+        Guid runId,
+        CancellationToken cancellationToken
+    );
+
     void Add(RewardEntity reward);
 }
