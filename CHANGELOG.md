@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.3.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/v1.2.0...v1.3.0) (2026-10-23)
+
+
+### Added
+
+* **chest-loot:** expose HTTP generation and address review feedback ([a1a57e8](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/a1a57e8a12cd91fb812baf6366af122a4b7c18d9))
+* **chest-loot:** expose immutable chest loot generation over HTTP ([2532c57](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/2532c57e7de56edde826e5d42f8e3301d4fa1269))
+* **reward:** grant enemy loot and guarantee a high-rarity item from bosses ([2103143](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/21031438756afd40ce705ac0d69c497b3d530856))
+
+
+### Fixed
+
+* **cd:** publish images through groupe7 Harbor domain ([ef1df48](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/ef1df480abbde833280c53dbec7414fe76059c59))
+* **cd:** publish through private Harbor 10.4.111.200:18443 ([17a6bce](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/17a6bce2b120a2c81a1e30012d3a7303b5ba2b87))
+* **cd:** publish through private Harbor endpoint ([7f3f00d](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/7f3f00db87d062152ab796325f2e3eb1a52252f6))
+* **cd:** use shared workflow with new Harbor endpoint ([764d077](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/764d077bb98b5cda34046e9267392a9617d96531))
+* **chest-loot:** require all HTTP request fields ([971ba69](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/971ba693d101517d0e0227488d562cbfcd3a9233))
+
+
+### Changed
+
+* **chest-loot:** type seed difficulty and remove added docs ([a3fc833](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/a3fc833aa516f44754ef9622003aa2f9e0de2cb3))
+* **reward:** apply review feedback on enemy loot ([8a64e12](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/8a64e124488cda2e2b4cce54a9a6c1afac87014d))
+* **reward:** remove legacy chest identity hash ([f8f28bf](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/f8f28bfe61e6ab8be2dc11418b1a3ababa01737e))
+* **reward:** use dungeon chest guids directly ([fd7e32e](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/fd7e32e6467723c5c1ffc3dad6455f70fb43748e))
+* **reward:** use dungeon chest GUIDs directly ([236717d](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/236717da72c31502b749132c10dd7d3edbc34eaa))
+
 ## [1.2.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/v1.1.0...v1.2.0) (2026-10-20)
 
 
