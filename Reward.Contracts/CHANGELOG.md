@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.0.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/contracts-v4.0.0...contracts-v5.0.0) (2026-11-27)
+
+
+### Added
+
+* **chest:** prevent loot loss when inventory capacity is insufficient ([de124b2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/de124b2d266f5c14777d297ee2e770206e0fc435))
+* **contracts:** add RewardPlayerService participation contract ([682291d](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/682291d65b2aae6ce14841a83e94b1653ed8a89e))
+* **reward:** expose group reward distribution of a run ([4e21eaf](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/4e21eaf9d677516a63da2b09f6bd753851430b25))
+
+## [4.0.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/contracts-v3.0.0...contracts-v4.0.0) (2026-10-23)
+
+
+### Added
+
+* **reward:** grant enemy loot and guarantee a high-rarity item from bosses ([2103143](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/21031438756afd40ce705ac0d69c497b3d530856))
+
 ## [3.0.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/contracts-v2.0.0...contracts-v3.0.0) (2026-10-20)
 
 
