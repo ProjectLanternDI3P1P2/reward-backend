@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.4.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/v1.3.0...v1.4.0) (2026-11-27)
+
+
+### Added
+
+* **chest:** prevent loot loss when inventory capacity is insufficient ([de124b2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/de124b2d266f5c14777d297ee2e770206e0fc435))
+* **logging:** emit structured container logs ([e9ea8a2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/e9ea8a2202222212bad844a53fad8f130a4471bc))
+* **logging:** emit structured JSON container logs ([988b9c7](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/988b9c70e9326aeee8b0205587a630be9571cdd5))
+* **migrations:** add migration-only command for GitOps jobs ([92562da](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/92562da2dccb7cb6b3d7739d00c9771857a12c5e))
+* **reward:** expose group reward distribution of a run ([4e21eaf](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/4e21eaf9d677516a63da2b09f6bd753851430b25))
+* **reward:** include enemy loot in the run distribution ([f5ff06e](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/f5ff06e4cddf1b2236a651a9cec8103a12248b1a))
+* **rewards:** return the viewer's player ID with the run distribution (US 611) ([9095b7e](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/9095b7e62da232e67da8d164f3478c7923721f29))
+* **rewards:** return the viewer's player ID with the run distribution (US 611) ([5aa382e](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/5aa382e3193ca8817c481bfd58251ea01ea07155))
+
+
+### Fixed
+
+* **cd:** use the shared workflow that signs before any pull ([c6ca2ce](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/c6ca2ceda0e81c6d8055a834d532d3a6a1472973))
+* **cd:** use the shared workflow that signs before any pull ([361ba82](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/361ba8298ad6536967b105ccee9a10ac9250429a))
+* **docker:** force build platform to linux/amd64 ([45c4a82](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/45c4a829cf43df1d860b7a6200d704ccd1a1176f))
+* **docker:** force build platform to linux/amd64 ([e7ebbb1](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/e7ebbb1e3863dbe3cadc1809a36ed03f3d76af3b))
+* **errors:** introduce DomainException and stop mapping InvalidOperationException to 409 ([2e7ebe2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/2e7ebe2edd8b3c59d02be09267a642af7e8c86e3))
+* **errors:** introduce DomainException and stop mapping InvalidOperationException to 409 ([f961664](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/f961664bd7fa705b46ae10c80f0a0f9dd7a71c99))
+* **rewards:** keep a localhost default for the Player gRPC address ([0c6cf1c](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/0c6cf1c3035afe6adcd8420877d22a9a188c0a53))
+* **rewards:** move run participation check behind an application port ([4b47ca6](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/4b47ca67469f96f0b5f6705305a9c5124581c358))
+* **rewards:** read the Player gRPC address from configuration only ([1b33a7f](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/1b33a7f9ec9750a8be95d6a6b977f934a05aa86d))
+* **rewards:** restrict run summaries to participants ([8e18192](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/8e18192287f1c5e098bd185967ef6d06dc89e09d))
+* **rewards:** validate the Player gRPC options on start instead of defaulting to localhost ([b0a7fa2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/b0a7fa2fcc19a0e1fcc1b8358d23280d44205c56))
+
+
+### Changed
+
+* **api:** standardize Rewards routes under /api/rewards/v1 ([0c5af69](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/0c5af693e7e9479ff5d46d2e2ffaf8454246a159))
+* **chest:** map capacity refusal centrally and name chest log outcomes ([9dbb499](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/9dbb4990214ebe191c59f67d5ee29a5473e354e6))
+* **rewards:** align the Player participation client with the other services ([1b730a2](https://github.com/ProjectLanternDI3P1P2/reward-backend/commit/1b730a2e0df05050db4d4ae20ff886bb594d320b))
+
 ## [1.3.0](https://github.com/ProjectLanternDI3P1P2/reward-backend/compare/v1.2.0...v1.3.0) (2026-10-23)
 
 
