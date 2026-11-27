@@ -78,6 +78,16 @@ Run all tests with:
 dotnet test --solution Reward.Presentation.slnx
 ```
 
+## Run reward distribution
+
+`GET /api/rewards/v1/runs/{dungeonRunId}/rewards` returns the run's reward
+distribution to confirmed participants. The top-level `viewerPlayerId` is the
+connected player's internal UUID from Player's `GetRunParticipation` response.
+It is present even when `distributions` is empty and is `null` when Player
+confirms participation without providing a usable ID, including with the local
+development mock. Clients can compare it with `recipients[].playerId` to mark
+the connected player's rewards when both IDs are available.
+
 ## Internal gRPC contract
 
 `Reward.Contracts` owns the versioned `Reward_player_v1.proto` contract and the
