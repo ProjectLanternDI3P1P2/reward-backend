@@ -10,9 +10,12 @@ public interface IPlayerParticipationClient
     /// <exception cref="Reward.Application.Exceptions.ExternalServiceUnavailableException">
     /// Player cannot answer: no participation can be assumed.
     /// </exception>
-    Task<bool> IsRunParticipantAsync(
+    Task<RunParticipation> GetRunParticipationAsync(
         string externalUserId,
         Guid dungeonRunId,
         CancellationToken cancellationToken
     );
 }
+
+/// <summary>Whether the caller participated and their internal Player ID, when available.</summary>
+public readonly record struct RunParticipation(bool IsParticipant, Guid? PlayerId);

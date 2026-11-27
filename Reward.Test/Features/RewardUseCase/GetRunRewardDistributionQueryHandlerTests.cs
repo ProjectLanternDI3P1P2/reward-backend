@@ -19,6 +19,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
     private readonly Guid bossId = Guid.NewGuid();
     private readonly Guid swordId = Guid.NewGuid();
     private readonly Guid potionId = Guid.NewGuid();
+    private readonly Guid viewerPlayerId = Guid.NewGuid();
     private const string ParticipantUserId = "keycloak-participant";
 
     private readonly Mock<IRewardRepository> repository = new();
@@ -26,7 +27,8 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
 
     public GetRunRewardDistributionQueryHandlerTests()
     {
-        SetupParticipation(ParticipantUserId).ReturnsAsync(true);
+        SetupParticipation(ParticipantUserId)
+            .ReturnsAsync(new RunParticipation(true, viewerPlayerId));
     }
 
     [Fact]
@@ -47,6 +49,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
 
         // Assert
         result.DungeonRunId.Should().Be(runId);
+        result.ViewerPlayerId.Should().Be(viewerPlayerId);
         RewardDistributionCause cause = result.Distributions.Should().ContainSingle().Subject;
         cause.SourceType.Should().Be("BOSS");
         cause.CauseId.Should().Be(bossId);
@@ -164,10 +167,17 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
             .BeEquivalentTo([1, 3]);
     }
 
-    [Fact]
-    public async Task Handle_NoGroupReward_ReturnsAnEmptyDistribution()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Handle_NoGroupReward_ReturnsAnEmptyDistributionWithTheAvailableViewerId(
+        bool hasPlayerId
+    )
     {
         // Arrange
+        Guid? expectedViewerId = hasPlayerId ? viewerPlayerId : null;
+        SetupParticipation(ParticipantUserId)
+            .ReturnsAsync(new RunParticipation(true, expectedViewerId));
         SetupRewards();
 
         // Act
@@ -179,6 +189,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
 
         // Assert
         result.DungeonRunId.Should().Be(runId);
+        result.ViewerPlayerId.Should().Be(expectedViewerId);
         result.Distributions.Should().BeEmpty();
     }
 
@@ -205,7 +216,7 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
     public async Task Handle_UserWhoDidNotTakePartInTheRun_ThrowsNotFoundWithoutReading()
     {
         // Arrange
-        SetupParticipation("keycloak-outsider").ReturnsAsync(false);
+        SetupParticipation("keycloak-outsider").ReturnsAsync(new RunParticipation(false, null));
 
         // Act
         Func<Task> act = () =>
@@ -240,11 +251,12 @@ public sealed class GetRunRewardDistributionQueryHandlerTests
         VerifyRewardsWereNotRead();
     }
 
-    private Moq.Language.Flow.ISetup<IPlayerParticipationClient, Task<bool>> SetupParticipation(
-        string userId
-    ) =>
+    private Moq.Language.Flow.ISetup<
+        IPlayerParticipationClient,
+        Task<RunParticipation>
+    > SetupParticipation(string userId) =>
         participation.Setup(client =>
-            client.IsRunParticipantAsync(userId, runId, It.IsAny<CancellationToken>())
+            client.GetRunParticipationAsync(userId, runId, It.IsAny<CancellationToken>())
         );
 
     private void VerifyRewardsWereNotRead() =>

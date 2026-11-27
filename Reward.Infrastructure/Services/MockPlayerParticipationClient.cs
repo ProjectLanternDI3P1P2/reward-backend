@@ -10,7 +10,7 @@ namespace Reward.Infrastructure.Services;
 public sealed class MockPlayerParticipationClient(ILogger<MockPlayerParticipationClient> logger)
     : IPlayerParticipationClient
 {
-    public Task<bool> IsRunParticipantAsync(
+    public Task<RunParticipation> GetRunParticipationAsync(
         string externalUserId,
         Guid dungeonRunId,
         CancellationToken cancellationToken
@@ -21,6 +21,6 @@ public sealed class MockPlayerParticipationClient(ILogger<MockPlayerParticipatio
             externalUserId,
             dungeonRunId
         );
-        return Task.FromResult(true);
+        return Task.FromResult(new RunParticipation(IsParticipant: true, PlayerId: null));
     }
 }

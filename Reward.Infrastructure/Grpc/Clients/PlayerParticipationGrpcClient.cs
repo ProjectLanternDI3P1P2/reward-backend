@@ -13,7 +13,7 @@ public sealed class PlayerParticipationGrpcClient(
     IOptions<PlayerGrpcClientOptions> options
 ) : IPlayerParticipationClient
 {
-    public async Task<bool> IsRunParticipantAsync(
+    public async Task<RunParticipation> GetRunParticipationAsync(
         string externalUserId,
         Guid dungeonRunId,
         CancellationToken cancellationToken
@@ -33,7 +33,13 @@ public sealed class PlayerParticipationGrpcClient(
                 )
             );
 
-            return reply.IsParticipant;
+            Guid? playerId =
+                reply.IsParticipant
+                && Guid.TryParse(reply.PlayerId, out Guid parsedPlayerId)
+                && parsedPlayerId != Guid.Empty
+                    ? parsedPlayerId
+                    : null;
+            return new RunParticipation(reply.IsParticipant, playerId);
         }
         // Without Player's answer nothing proves the caller took part: the access is refused
         // as unavailable, never granted by default.

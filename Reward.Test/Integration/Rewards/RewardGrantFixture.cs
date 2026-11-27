@@ -9,6 +9,7 @@ namespace Reward.Test.Integration.Rewards;
 public sealed class RewardGrantFixture : IAsyncLifetime
 {
     private const string DatabaseName = "reward_test_rewards";
+    internal static readonly Guid ViewerPlayerId = Guid.NewGuid();
     private TestDatabase? database;
     private RewardWebApplicationFactory? factory;
     private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>? configuredFactory;
@@ -52,15 +53,15 @@ public sealed class RewardGrantFixture : IAsyncLifetime
     // Stands in for Player's RewardPlayerService, keyed by the trusted gateway identity.
     private sealed class FakePlayerParticipationClient : IPlayerParticipationClient
     {
-        public Task<bool> IsRunParticipantAsync(
+        public Task<RunParticipation> GetRunParticipationAsync(
             string externalUserId,
             Guid dungeonRunId,
             CancellationToken cancellationToken
         ) =>
             externalUserId switch
             {
-                "participant" => Task.FromResult(true),
-                "outsider" => Task.FromResult(false),
+                "participant" => Task.FromResult(new RunParticipation(true, ViewerPlayerId)),
+                "outsider" => Task.FromResult(new RunParticipation(false, null)),
                 _ => throw new ExternalServiceUnavailableException(
                     "Player",
                     new TimeoutException("Player did not answer.")
